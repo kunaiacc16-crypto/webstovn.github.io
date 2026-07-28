@@ -1,452 +1,229 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STOVN | Cổng Thông Báo Chính Thức</title>
-<meta name="description" content="STOVN - Cổng thông tin và thông báo chính thức của trò chơi.">
-
-<!-- Google Fonts: Rajdhani cho tiêu đề (phong cách kỹ thuật), Manrope cho nội dung -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Roleplay Official</title>
+<meta name="description" content="Roleplay Official — Cộng đồng roleplay chính thức." />
+<link rel="stylesheet" href="style.css" />
 </head>
-<body class="theme-dark">
+<body>
 
-<!-- ============================================================ -->
-<!-- MÀN HÌNH LOADING -->
-<!-- ============================================================ -->
-<div id="loading-screen" class="loading-screen">
-  <div class="loading-inner">
-    <div class="loading-mark">
-      <span class="loading-ring"></span>
-      <span class="loading-ring loading-ring--delay"></span>
-      <span class="loading-logo">STOVN</span>
-    </div>
-    <p class="loading-text">Đang tải cổng thông báo...</p>
-  </div>
+<!-- ============================== LOADING SCREEN ============================== -->
+<div id="loading-screen">
+  <div class="loader-mark"><span>RO</span></div>
+  <div class="loader-text">Đang tải...</div>
 </div>
 
-<!-- ============================================================ -->
-<!-- NỀN HIỆU ỨNG (radar / lưới) -->
-<!-- ============================================================ -->
-<div class="bg-grid" aria-hidden="true"></div>
-<div class="bg-glow" aria-hidden="true"></div>
+<!-- ============================== TOAST ============================== -->
+<div id="toast-stack"></div>
 
-<!-- ============================================================ -->
-<!-- THANH ĐIỀU HƯỚNG -->
-<!-- ============================================================ -->
-<header class="navbar" id="navbar">
-  <div class="navbar-inner">
-    <a href="#home" class="brand" data-page="home">
-      <span class="brand-mark">S</span>
-      <span class="brand-text">STOVN</span>
+<!-- ============================== HEADER ============================== -->
+<header id="site-header">
+  <div class="container header-inner">
+    <a href="#trang-chu" class="brand" data-nav="trang-chu">
+      <span class="brand-mark" id="brand-mark-header"><span>RO</span></span>
+      <div>
+        <span class="brand-name" id="brand-name-header">Roleplay Official</span>
+        <span class="brand-version" id="brand-version-header">v1.0.0</span>
+      </div>
     </a>
 
-    <nav class="nav-links" id="nav-links">
-      <a href="#home" class="nav-link" data-page="home">Trang chủ</a>
-      <a href="#announcements" class="nav-link" data-page="announcements">Thông báo</a>
-      <a href="#recruitment" class="nav-link" data-page="recruitment">Tuyển dụng</a>
-      <a href="#updates" class="nav-link" data-page="updates">Cập nhật game</a>
-      <a href="#events" class="nav-link" data-page="events">Sự kiện</a>
-      <a href="#rules" class="nav-link" data-page="rules">Nội quy</a>
-      <a href="#guide" class="nav-link" data-page="guide">Hướng dẫn</a>
-      <a href="#contact" class="nav-link" data-page="contact">Liên hệ</a>
+    <nav class="main-nav" id="main-nav">
+      <a href="#trang-chu" class="nav-link" data-nav="trang-chu">Trang chủ</a>
+      <a href="#thong-bao" class="nav-link" data-nav="thong-bao">Thông báo</a>
+      <a href="#tuyen-dung" class="nav-link" data-nav="tuyen-dung">Tuyển dụng</a>
+      <a href="#cap-nhat" class="nav-link" data-nav="cap-nhat">Cập nhật</a>
+      <a href="#noi-quy" class="nav-link" data-nav="noi-quy">Nội quy</a>
+      <a href="#lien-he" class="nav-link" data-nav="lien-he">Liên hệ</a>
     </nav>
 
-    <div class="navbar-actions">
-      <!-- Trạng thái chưa đăng nhập -->
-      <button class="btn btn-outline" id="btn-open-login">Đăng nhập Roblox</button>
-
-      <!-- Trạng thái đã đăng nhập (ẩn theo mặc định) -->
-      <a href="#profile" class="user-chip" id="user-chip" data-page="profile" hidden>
-        <img id="user-chip-avatar" class="user-chip-avatar" src="" alt="Avatar">
-        <span class="user-chip-name" id="user-chip-name">—</span>
-        <span class="status-dot status-online"></span>
-      </a>
-
-      <button class="hamburger" id="hamburger" aria-label="Mở menu">
-        <span></span><span></span><span></span>
-      </button>
+    <div class="header-actions">
+      <button class="menu-toggle" id="menu-toggle" aria-label="Mở menu"><span></span></button>
     </div>
   </div>
 </header>
 
-<!-- ============================================================ -->
-<!-- NỘI DUNG CHÍNH -->
-<!-- ============================================================ -->
-<main id="app">
+<nav id="mobile-menu">
+  <a href="#trang-chu" class="nav-link" data-nav="trang-chu">Trang chủ</a>
+  <a href="#thong-bao" class="nav-link" data-nav="thong-bao">Thông báo</a>
+  <a href="#tuyen-dung" class="nav-link" data-nav="tuyen-dung">Tuyển dụng</a>
+  <a href="#cap-nhat" class="nav-link" data-nav="cap-nhat">Cập nhật</a>
+  <a href="#noi-quy" class="nav-link" data-nav="noi-quy">Nội quy</a>
+  <a href="#lien-he" class="nav-link" data-nav="lien-he">Liên hệ</a>
+</nav>
 
-  <!-- ======================= TRANG CHỦ ======================= -->
-  <section class="page" id="page-home" data-page="home">
-    <div class="hero">
-      <div class="hero-radar" aria-hidden="true">
-        <span class="radar-ring r1"></span>
-        <span class="radar-ring r2"></span>
-        <span class="radar-ring r3"></span>
-      </div>
-      <p class="hero-eyebrow reveal">CỔNG THÔNG BÁO CHÍNH THỨC</p>
-      <h1 class="hero-title reveal">
-        <span class="hero-title-main">STOVN</span>
-      </h1>
-      <p class="hero-desc reveal">
-        Nơi cập nhật mọi thông báo, sự kiện, tuyển dụng và phiên bản mới nhất của trò chơi.
-        Kết nối tài khoản Roblox của bạn để không bỏ lỡ bất kỳ tin tức quan trọng nào từ đội ngũ STOVN.
-      </p>
-      <div class="hero-actions reveal">
-        <a href="#announcements" class="btn btn-primary" data-page="announcements">Xem thông báo</a>
-        <button class="btn btn-ghost" id="btn-join">Gia nhập</button>
+<main>
+
+  <!-- ============================== TRANG CHỦ ============================== -->
+  <section class="hero" id="trang-chu">
+    <canvas id="hero-network"></canvas>
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <span class="hero-eyebrow">Cộng đồng roleplay chính thức</span>
+        <h1 class="hero-title">
+          <span id="hero-site-name">Roleplay Official</span><br />
+          <span class="accent">Nơi câu chuyện của bạn bắt đầu</span>
+        </h1>
+        <p class="hero-desc">
+          Theo dõi thông báo mới nhất, tham gia đội ngũ quản lý và cập nhật mọi thay đổi
+          của cộng đồng ngay tại một nơi duy nhất.
+        </p>
+        <div class="hero-actions">
+          <a href="#thong-bao" class="btn btn-primary" data-nav="thong-bao">Xem thông báo</a>
+          <a href="#tuyen-dung" class="btn btn-ghost" data-nav="tuyen-dung">Tuyển dụng</a>
+        </div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <span id="hero-version">v1.0.0</span>
+            <span>Phiên bản website</span>
+          </div>
+          <div class="hero-meta-item">
+            <span id="stat-announcements-count">0</span>
+            <span>Thông báo</span>
+          </div>
+          <div class="hero-meta-item">
+            <span id="stat-recruitments-count">0</span>
+            <span>Vị trí tuyển dụng</span>
+          </div>
+        </div>
       </div>
 
-      <div class="hero-stats reveal">
-        <div class="stat-item">
-          <span class="stat-number" id="stat-announcements">0</span>
-          <span class="stat-label">Thông báo</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number" id="stat-players">12,480</span>
-          <span class="stat-label">Người chơi</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number" id="stat-version">—</span>
-          <span class="stat-label">Phiên bản</span>
+      <div class="hero-banner glass" id="hero-banner">
+        <div class="hero-banner-glow"></div>
+        <div class="hero-banner-empty" id="hero-banner-empty">
+          <span class="brand-mark"><span>RO</span></span>
+          <p>Banner sẽ hiển thị tại đây sau khi quản trị viên tải lên trong Cài đặt Website.</p>
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="section-block">
+  <!-- ============================== THÔNG BÁO ============================== -->
+  <section class="page-section" id="thong-bao">
+    <div class="container">
       <div class="section-head reveal">
-        <p class="section-eyebrow">MỚI NHẤT</p>
-        <h2 class="section-title">Thông báo gần đây</h2>
-      </div>
-      <div class="card-grid" id="home-recent-announcements"></div>
-    </div>
-  </section>
-
-  <!-- ======================= THÔNG BÁO ======================= -->
-  <section class="page" id="page-announcements" data-page="announcements">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">TRUNG TÂM THÔNG BÁO</p>
-      <h1 class="page-title">Thông báo</h1>
-      <p class="page-sub">Toàn bộ thông tin chính thức được cập nhật liên tục từ đội ngũ STOVN.</p>
-    </div>
-
-    <div class="toolbar reveal">
-      <div class="search-box">
-        <svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input type="text" id="search-announcements" placeholder="Tìm kiếm thông báo...">
-      </div>
-      <div class="filter-group" id="filter-announcements">
-        <button class="filter-chip is-active" data-filter="all">Tất cả</button>
-        <button class="filter-chip" data-filter="quan-trong">Quan trọng</button>
-        <button class="filter-chip" data-filter="bao-tri">Bảo trì</button>
-        <button class="filter-chip" data-filter="cap-nhat">Cập nhật</button>
-        <button class="filter-chip" data-filter="su-kien">Sự kiện</button>
-      </div>
-    </div>
-
-    <div class="card-grid" id="announcements-list"></div>
-    <p class="empty-state" id="announcements-empty" hidden>Không tìm thấy thông báo phù hợp.</p>
-  </section>
-
-  <!-- ======================= TUYỂN DỤNG ======================= -->
-  <section class="page" id="page-recruitment" data-page="recruitment">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">GIA NHẬP ĐỘI NGŨ</p>
-      <h1 class="page-title">Thông báo tuyển dụng</h1>
-      <p class="page-sub">Trở thành một phần của đội ngũ vận hành và phát triển STOVN.</p>
-    </div>
-    <div class="recruit-grid" id="recruitment-list"></div>
-  </section>
-
-  <!-- ======================= CẬP NHẬT GAME ======================= -->
-  <section class="page" id="page-updates" data-page="updates">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">NHẬT KÝ PHÁT TRIỂN</p>
-      <h1 class="page-title">Cập nhật game</h1>
-      <p class="page-sub">Theo dõi từng phiên bản, từng thay đổi trong hành trình phát triển của STOVN.</p>
-    </div>
-    <div class="timeline" id="updates-timeline"></div>
-  </section>
-
-  <!-- ======================= SỰ KIỆN ======================= -->
-  <section class="page" id="page-events" data-page="events">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">HOẠT ĐỘNG ĐẶC BIỆT</p>
-      <h1 class="page-title">Sự kiện</h1>
-      <p class="page-sub">Các sự kiện trong game đang và sắp diễn ra.</p>
-    </div>
-    <div class="card-grid" id="events-list"></div>
-  </section>
-
-  <!-- ======================= NỘI QUY ======================= -->
-  <section class="page" id="page-rules" data-page="rules">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">QUY ĐỊNH CHUNG</p>
-      <h1 class="page-title">Nội quy</h1>
-      <p class="page-sub">Vui lòng đọc kỹ để đảm bảo trải nghiệm công bằng và an toàn cho tất cả người chơi.</p>
-    </div>
-    <div class="rules-list" id="rules-list"></div>
-  </section>
-
-  <!-- ======================= HƯỚNG DẪN ======================= -->
-  <section class="page" id="page-guide" data-page="guide">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">BẮT ĐẦU NHANH</p>
-      <h1 class="page-title">Hướng dẫn</h1>
-      <p class="page-sub">Các bước cơ bản để bắt đầu và sử dụng cổng thông tin STOVN.</p>
-    </div>
-    <div class="guide-grid" id="guide-list"></div>
-  </section>
-
-  <!-- ======================= LIÊN HỆ ======================= -->
-  <section class="page" id="page-contact" data-page="contact">
-    <div class="page-head reveal">
-      <p class="section-eyebrow">KẾT NỐI VỚI CHÚNG TÔI</p>
-      <h1 class="page-title">Liên hệ</h1>
-      <p class="page-sub">Đội ngũ STOVN luôn sẵn sàng lắng nghe ý kiến từ bạn.</p>
-    </div>
-
-    <div class="contact-wrap">
-      <div class="contact-info reveal">
-        <div class="glass-card contact-item">
-          <span class="contact-label">Cộng đồng Discord</span>
-          <span class="contact-value">discord.gg/stovn</span>
-        </div>
-        <div class="glass-card contact-item">
-          <span class="contact-label">Nhóm Roblox</span>
-          <span class="contact-value">roblox.com/groups/stovn</span>
-        </div>
-        <div class="glass-card contact-item">
-          <span class="contact-label">Email hỗ trợ</span>
-          <span class="contact-value">support@stovn.example</span>
+        <div>
+          <span class="section-eyebrow">Bảng tin</span>
+          <h2 class="section-title">Thông báo</h2>
+          <p class="section-desc">Toàn bộ thông báo chính thức từ đội ngũ quản trị Roleplay Official.</p>
         </div>
       </div>
 
-      <form class="glass-card contact-form reveal" id="contact-form">
-        <div class="form-row">
-          <label for="contact-name">Họ tên</label>
-          <input type="text" id="contact-name" required placeholder="Nhập họ tên của bạn">
+      <div class="toolbar glass reveal">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="announcement-search" placeholder="Tìm kiếm thông báo..." />
         </div>
-        <div class="form-row">
-          <label for="contact-subject">Chủ đề</label>
-          <input type="text" id="contact-subject" required placeholder="Bạn cần hỗ trợ điều gì?">
-        </div>
-        <div class="form-row">
-          <label for="contact-message">Nội dung</label>
-          <textarea id="contact-message" rows="4" required placeholder="Nhập nội dung tin nhắn..."></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Gửi liên hệ</button>
-      </form>
+        <select class="select-field" id="announcement-filter">
+          <option value="all">Tất cả loại</option>
+        </select>
+        <select class="select-field" id="announcement-sort">
+          <option value="newest">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
+          <option value="title-az">Tiêu đề A-Z</option>
+        </select>
+      </div>
+
+      <div class="card-grid" id="announcement-list"></div>
     </div>
   </section>
 
-  <!-- ======================= HỒ SƠ ======================= -->
-  <section class="page" id="page-profile" data-page="profile">
-    <div id="profile-guest" class="guest-block reveal">
-      <div class="glass-card guest-card">
-        <h2>Bạn chưa liên kết tài khoản</h2>
-        <p>Đăng nhập bằng tài khoản Roblox để xem hồ sơ và theo dõi hoạt động của bạn trên STOVN.</p>
-        <button class="btn btn-primary" id="btn-login-from-profile">Đăng nhập Roblox</button>
-      </div>
-    </div>
-
-    <div id="profile-content" class="profile-wrap" hidden>
-      <div class="page-head reveal">
-        <p class="section-eyebrow">TÀI KHOẢN CỦA BẠN</p>
-        <h1 class="page-title">Hồ sơ</h1>
-      </div>
-
-      <div class="profile-grid reveal">
-        <div class="glass-card profile-card">
-          <img id="profile-avatar" class="profile-avatar" src="" alt="Avatar Roblox">
-          <h2 id="profile-displayname">—</h2>
-          <p class="profile-username" id="profile-username">@—</p>
-          <span class="badge badge-linked">Đã liên kết tài khoản</span>
-        </div>
-
-        <div class="glass-card profile-details">
-          <div class="detail-row">
-            <span class="detail-label">User ID</span>
-            <span class="detail-value" id="profile-userid">—</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Ngày liên kết</span>
-            <span class="detail-value" id="profile-linkdate">—</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Vai trò trong game</span>
-            <span class="detail-value" id="profile-role">—</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Trạng thái</span>
-            <span class="detail-value"><span class="status-dot status-online"></span> <span id="profile-status">Online</span></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Số lần đăng nhập</span>
-            <span class="detail-value" id="profile-logincount">0</span>
-          </div>
-          <button class="btn btn-outline btn-block" id="btn-logout">Đăng xuất</button>
+  <!-- ============================== TUYỂN DỤNG ============================== -->
+  <section class="page-section" id="tuyen-dung">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <span class="section-eyebrow">Gia nhập đội ngũ</span>
+          <h2 class="section-title">Tuyển dụng</h2>
+          <p class="section-desc">Các vị trí đang mở tại Roleplay Official. Nhấn Đăng ký để nộp đơn ứng tuyển.</p>
         </div>
       </div>
+      <div class="card-grid" id="recruitment-list"></div>
     </div>
   </section>
 
-  <!-- ======================= ADMIN ======================= -->
-  <section class="page" id="page-admin" data-page="admin">
+  <!-- ============================== CẬP NHẬT ============================== -->
+  <section class="page-section" id="cap-nhat">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <span class="section-eyebrow">Nhật ký thay đổi</span>
+          <h2 class="section-title">Cập nhật</h2>
+          <p class="section-desc">Các thông báo thuộc loại "Cập nhật" do quản trị viên đăng tải.</p>
+        </div>
+      </div>
+      <div class="card-grid" id="update-list"></div>
+    </div>
+  </section>
 
-    <!-- Đăng nhập quản trị -->
-    <div id="admin-guest" class="guest-block reveal">
-      <div class="glass-card guest-card">
-        <h2>Khu vực quản trị</h2>
-        <p>Vui lòng đăng nhập bằng tài khoản quản trị viên để quản lý nội dung STOVN.</p>
-        <form id="admin-login-form" class="admin-login-form">
-          <div class="form-row">
-            <label for="admin-user">Tài khoản</label>
-            <input type="text" id="admin-user" placeholder="admin" required>
+  <!-- ============================== NỘI QUY ============================== -->
+  <section class="page-section" id="noi-quy">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <span class="section-eyebrow">Quy định chung</span>
+          <h2 class="section-title">Nội quy</h2>
+          <p class="section-desc">Các thông báo thuộc loại "Nội quy" do quản trị viên đăng tải.</p>
+        </div>
+      </div>
+      <div class="card-grid" id="rule-list"></div>
+    </div>
+  </section>
+
+  <!-- ============================== LIÊN HỆ ============================== -->
+  <section class="page-section" id="lien-he">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <span class="section-eyebrow">Kết nối với chúng tôi</span>
+          <h2 class="section-title">Liên hệ</h2>
+          <p class="section-desc">Gửi câu hỏi hoặc phản hồi của bạn đến đội ngũ Roleplay Official.</p>
+        </div>
+      </div>
+      <div class="contact-grid">
+        <form class="contact-form glass reveal" id="contact-form">
+          <div class="field">
+            <label for="contact-name">Họ và tên</label>
+            <input type="text" id="contact-name" required />
           </div>
-          <div class="form-row">
-            <label for="admin-pass">Mật khẩu</label>
-            <input type="password" id="admin-pass" placeholder="••••••••" required>
+          <div class="field">
+            <label for="contact-email">Email hoặc Discord</label>
+            <input type="text" id="contact-email" required />
           </div>
-          <button type="submit" class="btn btn-primary btn-block">Đăng nhập quản trị</button>
-          <p class="hint-text">Demo: admin / stovn2026</p>
+          <div class="field">
+            <label for="contact-message">Nội dung</label>
+            <textarea id="contact-message" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Gửi liên hệ</button>
         </form>
-      </div>
-    </div>
-
-    <!-- Bảng điều khiển quản trị -->
-    <div id="admin-content" class="admin-wrap" hidden>
-      <div class="page-head reveal">
-        <p class="section-eyebrow">BẢNG ĐIỀU KHIỂN</p>
-        <h1 class="page-title">Quản trị STOVN</h1>
-      </div>
-
-      <div class="admin-tabs reveal">
-        <button class="admin-tab is-active" data-tab="tab-announcements">Thông báo</button>
-        <button class="admin-tab" data-tab="tab-recruitment">Tuyển dụng</button>
-        <button class="admin-tab" data-tab="tab-updates">Cập nhật game</button>
-        <button class="admin-tab" data-tab="tab-users">Người dùng</button>
-        <button class="btn btn-outline" id="btn-admin-logout" style="margin-left:auto;">Đăng xuất</button>
-      </div>
-
-      <!-- Quản lý Thông báo -->
-      <div class="admin-tab-panel is-active" id="tab-announcements">
-        <div class="glass-card admin-form-card">
-          <h3>Thêm / Chỉnh sửa thông báo</h3>
-          <form id="form-announcement">
-            <input type="hidden" id="ann-id">
-            <div class="form-row">
-              <label for="ann-title">Tiêu đề</label>
-              <input type="text" id="ann-title" required>
+        <div class="contact-info glass reveal">
+          <div class="contact-info-item">
+            <div class="contact-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
-            <div class="form-row two-col">
-              <div>
-                <label for="ann-author">Người đăng</label>
-                <input type="text" id="ann-author" required>
-              </div>
-              <div>
-                <label for="ann-tag">Nhãn</label>
-                <select id="ann-tag">
-                  <option value="quan-trong">Quan trọng</option>
-                  <option value="bao-tri">Bảo trì</option>
-                  <option value="cap-nhat">Cập nhật</option>
-                  <option value="su-kien">Sự kiện</option>
-                </select>
-              </div>
+            <div>
+              <h4>Phản hồi nhanh</h4>
+              <p>Đội ngũ quản trị sẽ xem xét mọi liên hệ được gửi qua biểu mẫu này.</p>
             </div>
-            <div class="form-row">
-              <label for="ann-content">Nội dung</label>
-              <textarea id="ann-content" rows="4" required></textarea>
+          </div>
+          <div class="contact-info-item">
+            <div class="contact-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Lưu thông báo</button>
-              <button type="button" class="btn btn-ghost" id="ann-cancel-edit">Hủy chỉnh sửa</button>
+            <div>
+              <h4>Thời gian xử lý</h4>
+              <p>Thông tin liên hệ được lưu tạm trên trình duyệt của bạn ở giai đoạn hiện tại.</p>
             </div>
-          </form>
-        </div>
-        <div class="admin-list" id="admin-announcements-list"></div>
-      </div>
-
-      <!-- Quản lý Tuyển dụng -->
-      <div class="admin-tab-panel" id="tab-recruitment">
-        <div class="glass-card admin-form-card">
-          <h3>Thêm / Chỉnh sửa vị trí tuyển dụng</h3>
-          <form id="form-recruitment">
-            <input type="hidden" id="rec-id">
-            <div class="form-row two-col">
-              <div>
-                <label for="rec-title">Vị trí</label>
-                <input type="text" id="rec-title" required>
-              </div>
-              <div>
-                <label for="rec-status">Trạng thái</label>
-                <select id="rec-status">
-                  <option value="open">Còn tuyển</option>
-                  <option value="closed">Đã đóng</option>
-                </select>
-              </div>
+          </div>
+          <div class="contact-info-item">
+            <div class="contact-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            <div class="form-row">
-              <label for="rec-conditions">Điều kiện (mỗi dòng một mục)</label>
-              <textarea id="rec-conditions" rows="3" required></textarea>
+            <div>
+              <h4>Tuyển dụng &amp; hợp tác</h4>
+              <p>Xem các vị trí đang mở tại mục Tuyển dụng phía trên.</p>
             </div>
-            <div class="form-row">
-              <label for="rec-benefits">Quyền lợi (mỗi dòng một mục)</label>
-              <textarea id="rec-benefits" rows="3" required></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Lưu vị trí</button>
-              <button type="button" class="btn btn-ghost" id="rec-cancel-edit">Hủy chỉnh sửa</button>
-            </div>
-          </form>
-        </div>
-        <div class="admin-list" id="admin-recruitment-list"></div>
-      </div>
-
-      <!-- Quản lý Cập nhật game -->
-      <div class="admin-tab-panel" id="tab-updates">
-        <div class="glass-card admin-form-card">
-          <h3>Đăng cập nhật game</h3>
-          <form id="form-update">
-            <input type="hidden" id="upd-id">
-            <div class="form-row two-col">
-              <div>
-                <label for="upd-version">Phiên bản</label>
-                <input type="text" id="upd-version" placeholder="v1.0.0" required>
-              </div>
-              <div>
-                <label for="upd-date">Ngày phát hành</label>
-                <input type="date" id="upd-date" required>
-              </div>
-            </div>
-            <div class="form-row">
-              <label for="upd-changes">Danh sách thay đổi (mỗi dòng một mục)</label>
-              <textarea id="upd-changes" rows="4" required></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Lưu cập nhật</button>
-              <button type="button" class="btn btn-ghost" id="upd-cancel-edit">Hủy chỉnh sửa</button>
-            </div>
-          </form>
-        </div>
-        <div class="admin-list" id="admin-updates-list"></div>
-      </div>
-
-      <!-- Quản lý Người dùng -->
-      <div class="admin-tab-panel" id="tab-users">
-        <div class="glass-card">
-          <h3>Danh sách người dùng đã liên kết</h3>
-          <div class="table-wrap">
-            <table class="data-table" id="admin-users-table">
-              <thead>
-                <tr>
-                  <th>Avatar</th><th>Username</th><th>User ID</th><th>Vai trò</th><th>Lần đăng nhập</th><th>Trạng thái</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="admin-users-body"></tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -455,58 +232,338 @@
 
 </main>
 
-<!-- ============================================================ -->
-<!-- NÚT VỀ ĐẦU TRANG -->
-<!-- ============================================================ -->
-<button id="back-to-top" class="back-to-top" aria-label="Về đầu trang">
-  <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-</button>
-
-<!-- ============================================================ -->
-<!-- FOOTER -->
-<!-- ============================================================ -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <span class="brand-mark">S</span>
-      <div>
-        <p class="footer-title">STOVN Official</p>
-        <p class="footer-copy">&copy; 2026 STOVN. Bảo lưu mọi quyền.</p>
+<!-- ============================== FOOTER ============================== -->
+<footer id="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="brand-mark" id="brand-mark-footer"><span>RO</span></span>
+        <p id="footer-desc">Roleplay Official là cộng đồng roleplay chính thức, nơi cập nhật thông báo, tuyển dụng và quy định một cách minh bạch.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Điều hướng</h4>
+        <ul>
+          <li><a href="#trang-chu" data-nav="trang-chu">Trang chủ</a></li>
+          <li><a href="#thong-bao" data-nav="thong-bao">Thông báo</a></li>
+          <li><a href="#tuyen-dung" data-nav="tuyen-dung">Tuyển dụng</a></li>
+          <li><a href="#noi-quy" data-nav="noi-quy">Nội quy</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Hệ thống</h4>
+        <ul>
+          <li><a href="#lien-he" data-nav="lien-he">Liên hệ</a></li>
+          <li><button id="footer-admin-btn" type="button">Quản trị</button></li>
+        </ul>
       </div>
     </div>
-    <div class="footer-links">
-      <button class="footer-link" id="link-terms">Điều khoản sử dụng</button>
-      <button class="footer-link" id="link-privacy">Chính sách bảo mật</button>
-      <button class="footer-link" id="link-admin">Quản trị viên</button>
+    <div class="footer-bottom">
+      <span>© <span id="footer-year"></span> <span id="footer-site-name">Roleplay Official</span>. Mọi quyền được bảo lưu.</span>
+      <span id="footer-version">Phiên bản v1.0.0</span>
     </div>
   </div>
 </footer>
 
-<!-- ============================================================ -->
-<!-- MODAL: ĐĂNG NHẬP ROBLOX (mô phỏng OAuth) -->
-<!-- ============================================================ -->
-<div class="modal-overlay" id="login-modal">
-  <div class="modal glass-card">
-    <button class="modal-close" id="login-modal-close" aria-label="Đóng">&times;</button>
+<button id="back-to-top" aria-label="Lên đầu trang">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<!-- ============================== MODAL: ĐĂNG KÝ TUYỂN DỤNG ============================== -->
+<div class="modal-overlay" id="modal-apply">
+  <div class="modal-box">
     <div class="modal-head">
-      <span class="roblox-mark">R</span>
-      <h3>Đăng nhập bằng Roblox</h3>
-      <p>STOVN sẽ yêu cầu quyền truy cập vào tên hiển thị, avatar và User ID Roblox của bạn.</p>
-    </div>
-    <form id="roblox-login-form">
-      <div class="form-row">
-        <label for="roblox-username">Tên đăng nhập Roblox</label>
-        <input type="text" id="roblox-username" placeholder="Nhập username Roblox của bạn" required>
+      <div>
+        <h3>Đăng ký tuyển dụng</h3>
+        <p id="apply-position-label">Điền thông tin bên dưới để ứng tuyển.</p>
       </div>
-      <button type="submit" class="btn btn-primary btn-block" id="btn-roblox-submit">Ủy quyền đăng nhập</button>
-      <p class="hint-text">Đây là bản mô phỏng đăng nhập Roblox OAuth — dễ dàng thay thế bằng API Roblox thật ở hàm <code>mockRobloxOAuth()</code> trong script.js.</p>
+      <button class="modal-close" data-close="modal-apply">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form class="modal-form" id="apply-form">
+      <input type="hidden" id="apply-recruitment-id" />
+      <div class="field">
+        <label for="apply-roblox">Tên Roblox</label>
+        <input type="text" id="apply-roblox" required />
+      </div>
+      <div class="field">
+        <label for="apply-discord">Tên Discord</label>
+        <input type="text" id="apply-discord" required />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="apply-rank">Rank hiện tại</label>
+          <input type="text" id="apply-rank" required />
+        </div>
+        <div class="field">
+          <label for="apply-age">Tuổi</label>
+          <input type="number" id="apply-age" min="1" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="apply-reason">Lý do muốn tham gia</label>
+        <textarea id="apply-reason" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Gửi đơn đăng ký</button>
+    </form>
+
+    <div class="modal-success" id="apply-success" style="display:none;">
+      <div class="success-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h3>Gửi đơn thành công</h3>
+      <p>Đơn đăng ký của bạn đã được ghi nhận. Đội ngũ quản trị sẽ xem xét sớm nhất.</p>
+      <button type="button" class="btn btn-ghost" data-close="modal-apply">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== MODAL: ĐĂNG NHẬP QUẢN TRỊ ============================== -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h3>Đăng nhập quản trị</h3>
+        <p>Dành riêng cho quản trị viên Roleplay Official.</p>
+      </div>
+      <button class="modal-close" data-close="modal-login">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="modal-form" id="login-form">
+      <div class="modal-error" id="login-error">Tên đăng nhập hoặc mật khẩu không đúng.</div>
+      <div class="field">
+        <label for="login-username">Tên đăng nhập</label>
+        <input type="text" id="login-username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-password">Mật khẩu</label>
+        <input type="password" id="login-password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
     </form>
   </div>
 </div>
 
-<!-- Vùng thông báo dạng Toast -->
-<div class="toast-container" id="toast-container"></div>
+<!-- ============================== MODAL: THÊM/SỬA THÔNG BÁO ============================== -->
+<div class="modal-overlay" id="modal-announcement">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><h3 id="announcement-modal-title">Thêm thông báo</h3></div>
+      <button class="modal-close" data-close="modal-announcement">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="modal-form" id="announcement-form">
+      <input type="hidden" id="announcement-id" />
+      <div class="field">
+        <label for="announcement-title">Tiêu đề</label>
+        <input type="text" id="announcement-title" required />
+      </div>
+      <div class="field">
+        <label for="announcement-content">Nội dung</label>
+        <textarea id="announcement-content" required></textarea>
+      </div>
+      <div class="field">
+        <label for="announcement-type">Loại</label>
+        <select id="announcement-type" required>
+          <option value="Thông báo">Thông báo</option>
+          <option value="Cập nhật">Cập nhật</option>
+          <option value="Nội quy">Nội quy</option>
+          <option value="Sự kiện">Sự kiện</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Lưu thông báo</button>
+    </form>
+  </div>
+</div>
 
-<script src="script.js"></script>
+<!-- ============================== MODAL: THÊM/SỬA TUYỂN DỤNG ============================== -->
+<div class="modal-overlay" id="modal-recruitment">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><h3 id="recruitment-modal-title">Thêm tuyển dụng</h3></div>
+      <button class="modal-close" data-close="modal-recruitment">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="modal-form" id="recruitment-form">
+      <input type="hidden" id="recruitment-id" />
+      <div class="field">
+        <label for="recruitment-position">Chức vụ</label>
+        <input type="text" id="recruitment-position" required />
+      </div>
+      <div class="field">
+        <label for="recruitment-requirements">Điều kiện</label>
+        <textarea id="recruitment-requirements" required></textarea>
+      </div>
+      <div class="field">
+        <label for="recruitment-benefits">Quyền lợi</label>
+        <textarea id="recruitment-benefits" required></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="recruitment-deadline">Hạn đăng ký</label>
+          <input type="date" id="recruitment-deadline" required />
+        </div>
+        <div class="field">
+          <label for="recruitment-status">Trạng thái</label>
+          <select id="recruitment-status" required>
+            <option value="open">Đang mở</option>
+            <option value="closed">Đã đóng</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Lưu tin tuyển dụng</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================== BẢNG ĐIỀU KHIỂN QUẢN TRỊ ============================== -->
+<div id="admin-dashboard">
+  <aside class="dash-sidebar" id="dash-sidebar">
+    <div class="dash-brand">
+      <span class="brand-mark"><span>RO</span></span>
+      <div class="dash-brand-text">
+        <strong>Bảng điều khiển</strong>
+        <span>Roleplay Official</span>
+      </div>
+    </div>
+    <nav class="dash-nav">
+      <button class="dash-link active" data-panel="overview">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Tổng quan
+      </button>
+      <button class="dash-link" data-panel="announcements">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 18 4v16l-15-7Z"/><path d="M3 11v6a2 2 0 0 0 2 2h2"/></svg>
+        Quản lý thông báo
+      </button>
+      <button class="dash-link" data-panel="recruitments">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Quản lý tuyển dụng
+      </button>
+      <button class="dash-link" data-panel="applications">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
+        Quản lý đơn đăng ký
+      </button>
+      <button class="dash-link" data-panel="settings">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        Cài đặt Website
+      </button>
+    </nav>
+    <div class="dash-logout">
+      <button class="dash-link" id="dash-logout-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Đăng xuất
+      </button>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <button class="menu-toggle" id="dash-menu-toggle" style="display:inline-flex;"><span></span></button>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="dash-close-btn">Đóng bảng điều khiển</button>
+    </div>
+
+    <!-- Tổng quan -->
+    <section class="dash-panel active" id="panel-overview">
+      <div class="stat-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 18 4v16l-15-7Z"/></svg></div>
+          <span class="stat-value" id="ov-announcements">0</span>
+          <span class="stat-label">Tổng số thông báo</span>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          <span class="stat-value" id="ov-recruitments">0</span>
+          <span class="stat-label">Tổng số tuyển dụng</span>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+          <span class="stat-value" id="ov-applications">0</span>
+          <span class="stat-label">Tổng số đơn đăng ký</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quản lý thông báo -->
+    <section class="dash-panel" id="panel-announcements">
+      <div class="panel-head">
+        <h3>Quản lý thông báo</h3>
+        <button class="btn btn-primary btn-sm" id="add-announcement-btn">Thêm thông báo</button>
+      </div>
+      <div class="dash-table-wrap glass">
+        <table class="dash-table">
+          <thead><tr><th>Tiêu đề</th><th>Loại</th><th>Người đăng</th><th>Thời gian</th><th>Hành động</th></tr></thead>
+          <tbody id="admin-announcement-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Quản lý tuyển dụng -->
+    <section class="dash-panel" id="panel-recruitments">
+      <div class="panel-head">
+        <h3>Quản lý tuyển dụng</h3>
+        <button class="btn btn-primary btn-sm" id="add-recruitment-btn">Thêm tuyển dụng</button>
+      </div>
+      <div class="dash-table-wrap glass">
+        <table class="dash-table">
+          <thead><tr><th>Chức vụ</th><th>Hạn đăng ký</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+          <tbody id="admin-recruitment-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Quản lý đơn đăng ký -->
+    <section class="dash-panel" id="panel-applications">
+      <div class="panel-head">
+        <h3>Quản lý đơn đăng ký</h3>
+      </div>
+      <div class="dash-table-wrap glass">
+        <table class="dash-table">
+          <thead><tr><th>Roblox</th><th>Discord</th><th>Rank</th><th>Tuổi</th><th>Lý do</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+          <tbody id="admin-application-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Cài đặt Website -->
+    <section class="dash-panel" id="panel-settings">
+      <div class="panel-head"><h3>Cài đặt Website</h3></div>
+      <form class="settings-form" id="settings-form">
+        <div class="field">
+          <label for="settings-name">Tên Website</label>
+          <input type="text" id="settings-name" required />
+        </div>
+        <div class="field">
+          <label for="settings-logo">Đường dẫn Logo (URL ảnh)</label>
+          <input type="text" id="settings-logo" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label for="settings-banner">Đường dẫn Banner (URL ảnh)</label>
+          <input type="text" id="settings-banner" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label for="settings-background">Đường dẫn Ảnh nền (URL ảnh)</label>
+          <input type="text" id="settings-background" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label for="settings-version">Phiên bản</label>
+          <input type="text" id="settings-version" required />
+        </div>
+        <div class="field">
+          <label>Màu chủ đạo</label>
+          <div class="color-swatches" id="settings-color-swatches"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Lưu cài đặt</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script src="script.js" type="module"></script>
 </body>
 </html>
