@@ -1258,6 +1258,7 @@ select.select-field {
   background: var(--bg-0);
   display: none;
   overflow: hidden;
+  color: var(--white);
 }
 
 #admin-dashboard.open {
@@ -1292,11 +1293,12 @@ select.select-field {
 .dash-brand-text strong {
   font-family: var(--font-display);
   font-size: 14.5px;
+  color: var(--white);
 }
 
 .dash-brand-text span {
   font-size: 11.5px;
-  color: var(--muted-dim);
+  color: #9aa7c2;
 }
 
 .dash-nav {
@@ -1313,7 +1315,7 @@ select.select-field {
   padding: 11px 14px;
   border-radius: var(--radius-sm);
   font-size: 14px;
-  color: var(--muted);
+  color: #c3cee2;
   font-weight: 500;
   transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
@@ -1324,8 +1326,8 @@ select.select-field {
 }
 
 .dash-link.active {
-  background: rgba(47, 125, 250, 0.14);
-  color: var(--blue-300);
+  background: rgba(47, 125, 250, 0.16);
+  color: #eaf1ff;
 }
 
 .dash-link svg {
@@ -1338,11 +1340,23 @@ select.select-field {
   border-top: 1px solid var(--glass-border);
 }
 
+/* Nút Đăng xuất: tô màu đỏ (danger) riêng để phân biệt rõ với các mục điều
+   hướng khác trong bảng điều khiển. */
+#dash-logout-btn {
+  color: var(--danger);
+}
+
+#dash-logout-btn:hover {
+  background: rgba(239, 90, 111, 0.14);
+  color: var(--danger);
+}
+
 .dash-main {
   flex: 1;
   height: 100%;
   overflow-y: auto;
   padding: 30px 36px 70px;
+  color: var(--white);
 }
 
 .dash-topbar {
@@ -1360,7 +1374,7 @@ select.select-field {
 }
 
 .dash-topbar p {
-  color: var(--muted);
+  color: #aab6ce;
   font-size: 13.5px;
   margin-top: 4px;
 }
@@ -1402,11 +1416,12 @@ select.select-field {
   font-family: var(--font-display);
   font-size: 30px;
   font-weight: 800;
+  color: var(--white);
 }
 
 .stat-card .stat-label {
   font-size: 13px;
-  color: var(--muted);
+  color: #aab6ce;
 }
 
 .dash-table-wrap {
@@ -1426,13 +1441,14 @@ table.dash-table {
   font-size: 13.5px;
   border-bottom: 1px solid var(--glass-border);
   vertical-align: top;
+  color: #e3e8f2;
 }
 
 .dash-table th {
   font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted-dim);
+  color: #9aa7c2;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.02);
 }
@@ -1459,33 +1475,7 @@ table.dash-table {
 .panel-head h3 {
   font-family: var(--font-display);
   font-size: 18px;
-}
-
-.settings-form {
-  max-width: 560px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.color-swatches {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.color-swatch {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease);
-}
-
-.color-swatch.selected {
-  border-color: var(--white);
-  transform: scale(1.12);
+  color: var(--white);
 }
 
 .login-hint {
