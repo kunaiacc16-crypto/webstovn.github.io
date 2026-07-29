@@ -16,35 +16,42 @@ import {
   approveApplication,
   rejectApplication,
   deleteApplication,
-  loadSettings,
-  saveSettings,
 } from "./firebase.js";
 
 /* --------------------------------------------------------------------------
-   Hằng số & trạng thái toàn cục
+   Đăng nhập quản trị — kiểm tra bằng mã băm (hash), KHÔNG lưu mật khẩu dạng
+   chữ thường (plain text) trong mã nguồn.
+
+   LƯU Ý QUAN TRỌNG: Đây là trang tĩnh chạy hoàn toàn trên trình duyệt, không
+   có máy chủ/backend đứng giữa để xác thực. Vì vậy đây chỉ là một lớp che
+   chắn cơ bản (obfuscation) để mật khẩu không hiện ra thành chữ thường khi
+   mở F12 xem mã nguồn — nó KHÔNG phải là bảo mật tuyệt đối, vì hash vẫn có
+   thể bị dò (brute-force) nếu ai đó cố tình. Muốn bảo mật thật sự (không ai
+   bên ngoài đăng nhập được dù có xem mã nguồn), bắt buộc phải có một backend
+   thật để xác thực (ví dụ Firebase Authentication) thay vì so khớp ở phía
+   trình duyệt như thế này.
    -------------------------------------------------------------------------- */
-const ADMIN_CREDENTIALS = {
-  username: "BaovaChuotDz",
-  password: "BaoKoDz",
-};
+const ADMIN_CREDENTIAL_HASH =
+  "cfb10d351e93b61148a6ef30bbaf301f942446cf8524c0faa5337e5db31b6c21"; // sha256("username:password")
+const ADMIN_DISPLAY_NAME = "Quản trị viên";
+
+async function sha256Hex(text) {
+  const data = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function verifyAdminCredentials(username, password) {
+  const hash = await sha256Hex(`${username}:${password}`);
+  return hash === ADMIN_CREDENTIAL_HASH;
+}
 
 const DEFAULT_SETTINGS = {
   siteName: "Roleplay Official",
-  logo: "",
-  banner: "",
-  background: "",
   version: "v1.0.0",
-  color: "#2f7dfa",
 };
-
-const COLOR_OPTIONS = [
-  { name: "Xanh dương", value: "#2f7dfa" },
-  { name: "Chàm", value: "#5b6bf5" },
-  { name: "Xanh da trời", value: "#0ea5e9" },
-  { name: "Ngọc lam", value: "#14b8a6" },
-  { name: "Tím", value: "#8b5cf6" },
-  { name: "Hồng đỏ", value: "#f43f5e" },
-];
 
 const state = {
   announcements: [],
@@ -324,12 +331,11 @@ function initModalGeneral() {
 }
 
 /* --------------------------------------------------------------------------
-   Áp dụng Cài đặt Website lên giao diện
+   Áp dụng cấu hình cơ bản (tên website / phiên bản) lên giao diện
    -------------------------------------------------------------------------- */
 function applySettingsToUI() {
   const s = state.settings;
 
-  document.documentElement.style.setProperty("--blue-500", s.color);
   document.title = s.siteName;
 
   $all("#brand-name-header").forEach((el) => (el.textContent = s.siteName));
@@ -338,85 +344,22 @@ function applySettingsToUI() {
   $all("#brand-version-header, #hero-version").forEach((el) => (el.textContent = s.version));
   $("#footer-version").textContent = `Phiên bản ${s.version}`;
 
-  const initials = s.siteName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "RO";
+  const initials =
+    s.siteName
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "RO";
 
   $all(".brand-mark span").forEach((span) => {
-    if (!span.closest(".brand-mark").querySelector("img")) span.textContent = initials;
-  });
-
-  [$("#brand-mark-header"), $("#brand-mark-footer")].forEach((mark) => {
-    if (!mark) return;
-    const existingImg = mark.querySelector("img");
-    if (s.logo) {
-      if (existingImg) {
-        existingImg.src = s.logo;
-      } else {
-        mark.innerHTML = `<img src="${escapeHtml(s.logo)}" alt="${escapeHtml(s.siteName)}" />`;
-      }
-    } else if (existingImg) {
-      mark.innerHTML = `<span>${initials}</span>`;
-    }
-  });
-
-  const heroBanner = $("#hero-banner");
-  const heroBannerEmpty = $("#hero-banner-empty");
-  let bannerImg = heroBanner.querySelector("img");
-  if (s.banner) {
-    if (!bannerImg) {
-      bannerImg = document.createElement("img");
-      heroBanner.prepend(bannerImg);
-    }
-    bannerImg.src = s.banner;
-    bannerImg.alt = s.siteName;
-    heroBannerEmpty.style.display = "none";
-  } else {
-    if (bannerImg) bannerImg.remove();
-    heroBannerEmpty.style.display = "flex";
-  }
-
-  if (s.background) {
-    document.body.style.backgroundImage = `linear-gradient(rgba(5,7,12,0.86), rgba(5,7,12,0.92)), url('${s.background}')`;
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backgroundPosition = "center";
-    document.body.style.backgroundAttachment = "fixed";
-  } else {
-    document.body.style.backgroundImage = "";
-  }
-}
-
-function fillSettingsForm() {
-  const s = state.settings;
-  $("#settings-name").value = s.siteName;
-  $("#settings-logo").value = s.logo;
-  $("#settings-banner").value = s.banner;
-  $("#settings-background").value = s.background;
-  $("#settings-version").value = s.version;
-
-  const swatchWrap = $("#settings-color-swatches");
-  swatchWrap.innerHTML = "";
-  COLOR_OPTIONS.forEach((option) => {
-    const swatch = document.createElement("button");
-    swatch.type = "button";
-    swatch.className = "color-swatch";
-    swatch.style.background = option.value;
-    swatch.title = option.name;
-    swatch.dataset.color = option.value;
-    if (option.value.toLowerCase() === s.color.toLowerCase()) swatch.classList.add("selected");
-    swatch.addEventListener("click", () => {
-      $all(".color-swatch", swatchWrap).forEach((el) => el.classList.remove("selected"));
-      swatch.classList.add("selected");
-    });
-    swatchWrap.appendChild(swatch);
+    span.textContent = initials;
   });
 }
 
 /* --------------------------------------------------------------------------
-   Render: Thông báo / Cập nhật / Nội quy
+   Render: Thông báo (bao gồm cả loại "Cập nhật" và "Nội quy" — lọc bằng
+   bộ lọc Loại thay vì tách ra nhiều mục trùng lặp trên trang chủ)
    -------------------------------------------------------------------------- */
 function renderAnnouncementFilterOptions() {
   const filter = $("#announcement-filter");
@@ -488,25 +431,7 @@ function renderAnnouncements() {
         "Hiện chưa có thông báo nào phù hợp. Quản trị viên có thể thêm thông báo mới trong Bảng điều khiển."
       );
 
-  renderUpdatesAndRules();
   updateHeroStats();
-}
-
-function renderUpdatesAndRules() {
-  const updates = state.announcements
-    .filter((a) => a.type === "Cập nhật")
-    .sort((a, b) => b.timestamp - a.timestamp);
-  const rules = state.announcements
-    .filter((a) => a.type === "Nội quy")
-    .sort((a, b) => b.timestamp - a.timestamp);
-
-  $("#update-list").innerHTML = updates.length
-    ? updates.map(announcementCardHtml).join("")
-    : emptyStateHtml("Chưa có cập nhật", "Chưa có nội dung cập nhật nào được đăng tải.");
-
-  $("#rule-list").innerHTML = rules.length
-    ? rules.map(announcementCardHtml).join("")
-    : emptyStateHtml("Chưa có nội quy", "Chưa có nội quy nào được đăng tải.");
 }
 
 /* --------------------------------------------------------------------------
@@ -576,30 +501,42 @@ function initAdminLogin() {
     openModal("modal-login");
   });
 
-  $("#login-form").addEventListener("submit", (event) => {
+  $("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const username = $("#login-username").value.trim();
     const password = $("#login-password").value;
+    const submitBtn = $("#login-form button[type=submit]");
 
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+    submitBtn.disabled = true;
+    const isValid = await verifyAdminCredentials(username, password);
+    submitBtn.disabled = false;
+
+    if (isValid) {
       state.isAdmin = true;
       closeModal("modal-login");
       showToast("Đăng nhập thành công.", "success");
       openDashboard();
     } else {
+      state.isAdmin = false;
       $("#login-error").classList.add("show");
     }
   });
 }
 
+// Chỉ mở được Bảng điều khiển khi đã đăng nhập thành công (state.isAdmin === true).
+// Hàm này luôn kiểm tra lại điều kiện đó, dù được gọi từ đâu, để tránh trường
+// hợp bảng điều khiển bị mở ra mà chưa qua bước đăng nhập.
 function openDashboard() {
+  if (!state.isAdmin) {
+    showToast("Bạn cần đăng nhập quản trị trước.", "error");
+    return;
+  }
   $("#admin-dashboard").classList.add("open");
   document.body.classList.add("no-scroll");
   renderAdminOverview();
   renderAdminAnnouncements();
   renderAdminRecruitments();
   renderAdminApplications();
-  fillSettingsForm();
 }
 
 function closeDashboard() {
@@ -704,7 +641,7 @@ function initAnnouncementForm() {
       title: $("#announcement-title").value.trim(),
       content: $("#announcement-content").value.trim(),
       type: $("#announcement-type").value,
-      author: ADMIN_CREDENTIALS.username,
+      author: ADMIN_DISPLAY_NAME,
     });
     await refreshAnnouncements();
     renderAdminAnnouncements();
@@ -858,26 +795,6 @@ function renderAdminApplications() {
   );
 }
 
-/* ----- Cài đặt Website (admin) ----- */
-function initSettingsForm() {
-  $("#settings-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const selectedSwatch = $(".color-swatch.selected");
-    const newSettings = {
-      siteName: $("#settings-name").value.trim() || DEFAULT_SETTINGS.siteName,
-      logo: $("#settings-logo").value.trim(),
-      banner: $("#settings-banner").value.trim(),
-      background: $("#settings-background").value.trim(),
-      version: $("#settings-version").value.trim() || DEFAULT_SETTINGS.version,
-      color: selectedSwatch ? selectedSwatch.dataset.color : state.settings.color,
-    };
-    await saveSettings(newSettings);
-    state.settings = newSettings;
-    applySettingsToUI();
-    showToast("Đã lưu cài đặt website.", "success");
-  });
-}
-
 /* --------------------------------------------------------------------------
    Biểu mẫu công khai: Đăng ký tuyển dụng & Liên hệ
    -------------------------------------------------------------------------- */
@@ -927,16 +844,15 @@ async function refreshApplications() {
 }
 
 async function loadInitialData() {
-  const [announcements, recruitments, applications, settings] = await Promise.all([
+  const [announcements, recruitments, applications] = await Promise.all([
     loadAnnouncements(),
     loadRecruitments(),
     loadApplications(),
-    loadSettings(),
   ]);
   state.announcements = announcements;
   state.recruitments = recruitments;
   state.applications = applications;
-  state.settings = settings ? { ...DEFAULT_SETTINGS, ...settings } : { ...DEFAULT_SETTINGS };
+  state.settings = { ...DEFAULT_SETTINGS };
 
   applySettingsToUI();
   renderAnnouncements();
@@ -950,14 +866,6 @@ function initAnnouncementToolbar() {
   $("#announcement-search").addEventListener("input", renderAnnouncements);
   $("#announcement-filter").addEventListener("change", renderAnnouncements);
   $("#announcement-sort").addEventListener("change", renderAnnouncements);
-}
-
-/* --------------------------------------------------------------------------
-   Menu "Cập nhật" / "Nội quy" điều hướng tới bộ lọc tương ứng trong Thông báo
-   -------------------------------------------------------------------------- */
-function initCrossNav() {
-  // Không cần xử lý thêm: hai mục này có section riêng render trực tiếp
-  // từ dữ liệu Thông báo theo Loại, nên chỉ cần cuộn trang (đã xử lý bởi CSS).
 }
 
 /* --------------------------------------------------------------------------
@@ -976,17 +884,14 @@ async function init() {
   initHeaderScroll();
   initMobileMenu();
   initNavHighlight();
-  initBackToTopFallback();
   initModalGeneral();
   initAdminLogin();
   initDashboardShell();
   initAnnouncementForm();
   initRecruitmentForm();
-  initSettingsForm();
   initApplyForm();
   initContactForm();
   initAnnouncementToolbar();
-  initCrossNav();
   initFooterYear();
 
   await loadInitialData();
@@ -996,9 +901,5 @@ async function init() {
 
   window.addEventListener("resize", detectDevice);
 }
-
-// Nút lên đầu trang đã có logic trong initHeaderScroll; hàm này giữ chỗ để
-// đảm bảo phần tử luôn được gắn sự kiện dù thứ tự khởi tạo thay đổi.
-function initBackToTopFallback() {}
 
 document.addEventListener("DOMContentLoaded", init);
