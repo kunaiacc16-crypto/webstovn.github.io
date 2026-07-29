@@ -18,7 +18,17 @@
      const db = getFirestore(app);
    rồi thay thế các thao tác localStorage bên dưới bằng thao tác Firestore
    tương ứng theo từng collection: "announcements", "recruitments",
-   "applications", "settings".
+   "applications".
+
+   LƯU Ý BẢO MẬT: Đây là lớp lưu trữ phía client (localStorage), không có máy
+   chủ đứng giữa để kiểm tra quyền hạn. Vì vậy bất kỳ ai mở DevTools (F12)
+   đều có thể đọc/sửa dữ liệu localStorage hoặc gọi thẳng các hàm export ở
+   đây. Việc đăng nhập quản trị ở script.js chỉ ngăn người dùng thường vô
+   tình vào nhầm bảng điều khiển qua giao diện — đây KHÔNG phải bảo mật thật
+   sự. Để có bảo mật thực sự (không ai bên ngoài có thể đọc/sửa dữ liệu dù
+   có mở F12), bắt buộc phải chuyển sang một backend/API thật (ví dụ
+   Firebase Firestore + Firebase Auth + Security Rules) để việc xác thực và
+   phân quyền diễn ra ở phía máy chủ, không phải trong trình duyệt.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -28,7 +38,6 @@ const STORAGE_KEYS = {
   announcements: "ro_announcements",
   recruitments: "ro_recruitments",
   applications: "ro_applications",
-  settings: "ro_settings",
 };
 
 /* --------------------------------------------------------------------------
@@ -223,28 +232,4 @@ export async function deleteApplication(id) {
   const items = _readCollection(STORAGE_KEYS.applications);
   const filtered = items.filter((item) => item.id !== id);
   return _writeCollection(STORAGE_KEYS.applications, filtered);
-}
-
-/* ==========================================================================
-   CÀI ĐẶT WEBSITE (SETTINGS)
-   TODO Firebase: thay bằng document "settings/site" trên Firestore.
-   ========================================================================== */
-
-// Tải cài đặt website hiện tại (trả về null nếu chưa từng lưu).
-export async function loadSettings() {
-  await _tick();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.settings);
-    return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    console.error("[firebase.js] Lỗi đọc cài đặt website:", error);
-    return null;
-  }
-}
-
-// Lưu cài đặt website (ghi đè toàn bộ).
-export async function saveSettings(settings) {
-  await _tick();
-  _writeCollection(STORAGE_KEYS.settings, settings);
-  return settings;
 }
