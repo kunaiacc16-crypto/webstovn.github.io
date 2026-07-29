@@ -33,8 +33,6 @@
       <a href="#trang-chu" class="nav-link" data-nav="trang-chu">Trang chủ</a>
       <a href="#thong-bao" class="nav-link" data-nav="thong-bao">Thông báo</a>
       <a href="#tuyen-dung" class="nav-link" data-nav="tuyen-dung">Tuyển dụng</a>
-      <a href="#cap-nhat" class="nav-link" data-nav="cap-nhat">Cập nhật</a>
-      <a href="#noi-quy" class="nav-link" data-nav="noi-quy">Nội quy</a>
       <a href="#lien-he" class="nav-link" data-nav="lien-he">Liên hệ</a>
     </nav>
 
@@ -48,8 +46,6 @@
   <a href="#trang-chu" class="nav-link" data-nav="trang-chu">Trang chủ</a>
   <a href="#thong-bao" class="nav-link" data-nav="thong-bao">Thông báo</a>
   <a href="#tuyen-dung" class="nav-link" data-nav="tuyen-dung">Tuyển dụng</a>
-  <a href="#cap-nhat" class="nav-link" data-nav="cap-nhat">Cập nhật</a>
-  <a href="#noi-quy" class="nav-link" data-nav="noi-quy">Nội quy</a>
   <a href="#lien-he" class="nav-link" data-nav="lien-he">Liên hệ</a>
 </nav>
 
@@ -93,20 +89,23 @@
         <div class="hero-banner-glow"></div>
         <div class="hero-banner-empty" id="hero-banner-empty">
           <span class="brand-mark"><span>RO</span></span>
-          <p>Banner sẽ hiển thị tại đây sau khi quản trị viên tải lên trong Cài đặt Website.</p>
+          <p>Banner sẽ hiển thị tại đây khi được cập nhật.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ============================== THÔNG BÁO ============================== -->
+  <!-- Gộp chung: Thông báo / Cập nhật / Nội quy đều là "thông báo" chỉ khác Loại,
+       nên chỉ dùng 1 danh sách duy nhất kèm bộ lọc Loại bên dưới, không tách
+       thành nhiều mục trùng lặp trên trang chủ nữa. -->
   <section class="page-section" id="thong-bao">
     <div class="container">
       <div class="section-head reveal">
         <div>
           <span class="section-eyebrow">Bảng tin</span>
           <h2 class="section-title">Thông báo</h2>
-          <p class="section-desc">Toàn bộ thông báo chính thức từ đội ngũ quản trị Roleplay Official.</p>
+          <p class="section-desc">Toàn bộ thông báo, cập nhật và nội quy từ đội ngũ quản trị Roleplay Official. Dùng bộ lọc "Loại" bên dưới để xem riêng từng mục.</p>
         </div>
       </div>
 
@@ -140,34 +139,6 @@
         </div>
       </div>
       <div class="card-grid" id="recruitment-list"></div>
-    </div>
-  </section>
-
-  <!-- ============================== CẬP NHẬT ============================== -->
-  <section class="page-section" id="cap-nhat">
-    <div class="container">
-      <div class="section-head reveal">
-        <div>
-          <span class="section-eyebrow">Nhật ký thay đổi</span>
-          <h2 class="section-title">Cập nhật</h2>
-          <p class="section-desc">Các thông báo thuộc loại "Cập nhật" do quản trị viên đăng tải.</p>
-        </div>
-      </div>
-      <div class="card-grid" id="update-list"></div>
-    </div>
-  </section>
-
-  <!-- ============================== NỘI QUY ============================== -->
-  <section class="page-section" id="noi-quy">
-    <div class="container">
-      <div class="section-head reveal">
-        <div>
-          <span class="section-eyebrow">Quy định chung</span>
-          <h2 class="section-title">Nội quy</h2>
-          <p class="section-desc">Các thông báo thuộc loại "Nội quy" do quản trị viên đăng tải.</p>
-        </div>
-      </div>
-      <div class="card-grid" id="rule-list"></div>
     </div>
   </section>
 
@@ -246,7 +217,6 @@
           <li><a href="#trang-chu" data-nav="trang-chu">Trang chủ</a></li>
           <li><a href="#thong-bao" data-nav="thong-bao">Thông báo</a></li>
           <li><a href="#tuyen-dung" data-nav="tuyen-dung">Tuyển dụng</a></li>
-          <li><a href="#noi-quy" data-nav="noi-quy">Nội quy</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -447,10 +417,6 @@
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
         Quản lý đơn đăng ký
       </button>
-      <button class="dash-link" data-panel="settings">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-        Cài đặt Website
-      </button>
     </nav>
     <div class="dash-logout">
       <button class="dash-link" id="dash-logout-btn">
@@ -528,38 +494,6 @@
           <tbody id="admin-application-table"></tbody>
         </table>
       </div>
-    </section>
-
-    <!-- Cài đặt Website -->
-    <section class="dash-panel" id="panel-settings">
-      <div class="panel-head"><h3>Cài đặt Website</h3></div>
-      <form class="settings-form" id="settings-form">
-        <div class="field">
-          <label for="settings-name">Tên Website</label>
-          <input type="text" id="settings-name" required />
-        </div>
-        <div class="field">
-          <label for="settings-logo">Đường dẫn Logo (URL ảnh)</label>
-          <input type="text" id="settings-logo" placeholder="https://..." />
-        </div>
-        <div class="field">
-          <label for="settings-banner">Đường dẫn Banner (URL ảnh)</label>
-          <input type="text" id="settings-banner" placeholder="https://..." />
-        </div>
-        <div class="field">
-          <label for="settings-background">Đường dẫn Ảnh nền (URL ảnh)</label>
-          <input type="text" id="settings-background" placeholder="https://..." />
-        </div>
-        <div class="field">
-          <label for="settings-version">Phiên bản</label>
-          <input type="text" id="settings-version" required />
-        </div>
-        <div class="field">
-          <label>Màu chủ đạo</label>
-          <div class="color-swatches" id="settings-color-swatches"></div>
-        </div>
-        <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Lưu cài đặt</button>
-      </form>
     </section>
   </div>
 </div>
