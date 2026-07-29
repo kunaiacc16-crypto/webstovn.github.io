@@ -5,6 +5,9 @@
    ========================================================================== */
 
 import {
+  loginAdmin,
+  logoutAdmin,
+  watchAdminAuth,
   loadAnnouncements,
   saveAnnouncement,
   deleteAnnouncement,
@@ -18,35 +21,7 @@ import {
   deleteApplication,
 } from "./firebase.js";
 
-/* --------------------------------------------------------------------------
-   Đăng nhập quản trị — kiểm tra bằng mã băm (hash), KHÔNG lưu mật khẩu dạng
-   chữ thường (plain text) trong mã nguồn.
-
-   LƯU Ý QUAN TRỌNG: Đây là trang tĩnh chạy hoàn toàn trên trình duyệt, không
-   có máy chủ/backend đứng giữa để xác thực. Vì vậy đây chỉ là một lớp che
-   chắn cơ bản (obfuscation) để mật khẩu không hiện ra thành chữ thường khi
-   mở F12 xem mã nguồn — nó KHÔNG phải là bảo mật tuyệt đối, vì hash vẫn có
-   thể bị dò (brute-force) nếu ai đó cố tình. Muốn bảo mật thật sự (không ai
-   bên ngoài đăng nhập được dù có xem mã nguồn), bắt buộc phải có một backend
-   thật để xác thực (ví dụ Firebase Authentication) thay vì so khớp ở phía
-   trình duyệt như thế này.
-   -------------------------------------------------------------------------- */
-const ADMIN_CREDENTIAL_HASH =
-  "cfb10d351e93b61148a6ef30bbaf301f942446cf8524c0faa5337e5db31b6c21"; // sha256("username:password")
 const ADMIN_DISPLAY_NAME = "Quản trị viên";
-
-async function sha256Hex(text) {
-  const data = new TextEncoder().encode(text);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function verifyAdminCredentials(username, password) {
-  const hash = await sha256Hex(`${username}:${password}`);
-  return hash === ADMIN_CREDENTIAL_HASH;
-}
 
 const DEFAULT_SETTINGS = {
   siteName: "Roleplay Official",
@@ -124,7 +99,6 @@ function initLoadingScreen() {
     setTimeout(() => loadingScreen.classList.add("hidden"), remaining);
   });
 
-  // An toàn: nếu sự kiện load đã bắn trước khi script chạy.
   if (document.readyState === "complete") {
     setTimeout(() => loadingScreen.classList.add("hidden"), minDuration);
   }
@@ -358,8 +332,7 @@ function applySettingsToUI() {
 }
 
 /* --------------------------------------------------------------------------
-   Render: Thông báo (bao gồm cả loại "Cập nhật" và "Nội quy" — lọc bằng
-   bộ lọc Loại thay vì tách ra nhiều mục trùng lặp trên trang chủ)
+   Render: Thông báo
    -------------------------------------------------------------------------- */
 function renderAnnouncementFilterOptions() {
   const filter = $("#announcement-filter");
@@ -503,29 +476,42 @@ function initAdminLogin() {
 
   $("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const username = $("#login-username").value.trim();
+    // Trường #login-username giờ dùng để nhập EMAIL quản trị đã tạo trên
+    // Firebase Console > Authentication (không phải username tự đặt nữa).
+    const email = $("#login-username").value.trim();
     const password = $("#login-password").value;
     const submitBtn = $("#login-form button[type=submit]");
 
     submitBtn.disabled = true;
-    const isValid = await verifyAdminCredentials(username, password);
-    submitBtn.disabled = false;
+    $("#login-error").classList.remove("show");
 
-    if (isValid) {
+    try {
+      await loginAdmin(email, password);
+      // state.isAdmin sẽ được cập nhật bởi watchAdminAuth() bên dưới,
+      // nhưng set luôn ở đây để mở dashboard ngay không phải chờ callback.
       state.isAdmin = true;
       closeModal("modal-login");
       showToast("Đăng nhập thành công.", "success");
       openDashboard();
-    } else {
+    } catch (error) {
+      console.error("[Đăng nhập quản trị] Lỗi:", error.code || error);
       state.isAdmin = false;
       $("#login-error").classList.add("show");
+    } finally {
+      submitBtn.disabled = false;
     }
   });
 }
 
-// Chỉ mở được Bảng điều khiển khi đã đăng nhập thành công (state.isAdmin === true).
-// Hàm này luôn kiểm tra lại điều kiện đó, dù được gọi từ đâu, để tránh trường
-// hợp bảng điều khiển bị mở ra mà chưa qua bước đăng nhập.
+// Theo dõi trạng thái đăng nhập Firebase Auth trong suốt phiên làm việc.
+// Nhờ vậy nếu người dùng F5 lại trang mà phiên đăng nhập Firebase còn hiệu
+// lực, state.isAdmin vẫn đúng (không cần đăng nhập lại).
+function initAdminAuthWatcher() {
+  watchAdminAuth((user) => {
+    state.isAdmin = Boolean(user);
+  });
+}
+
 function openDashboard() {
   if (!state.isAdmin) {
     showToast("Bạn cần đăng nhập quản trị trước.", "error");
@@ -546,7 +532,8 @@ function closeDashboard() {
 
 function initDashboardShell() {
   $("#dash-close-btn").addEventListener("click", closeDashboard);
-  $("#dash-logout-btn").addEventListener("click", () => {
+  $("#dash-logout-btn").addEventListener("click", async () => {
+    await logoutAdmin();
     state.isAdmin = false;
     closeDashboard();
     showToast("Đã đăng xuất khỏi quản trị.", "success");
@@ -603,11 +590,16 @@ function renderAdminAnnouncements() {
   $all("[data-delete-announcement]", tbody).forEach((btn) =>
     btn.addEventListener("click", async () => {
       if (!confirm("Xóa thông báo này?")) return;
-      await deleteAnnouncement(btn.dataset.deleteAnnouncement);
-      await refreshAnnouncements();
-      renderAdminAnnouncements();
-      renderAdminOverview();
-      showToast("Đã xóa thông báo.", "success");
+      try {
+        await deleteAnnouncement(btn.dataset.deleteAnnouncement);
+        await refreshAnnouncements();
+        renderAdminAnnouncements();
+        renderAdminOverview();
+        showToast("Đã xóa thông báo.", "success");
+      } catch (error) {
+        console.error(error);
+        showToast("Xóa thất bại, kiểm tra lại đăng nhập.", "error");
+      }
     })
   );
 }
@@ -636,18 +628,23 @@ function initAnnouncementForm() {
   $("#announcement-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const id = $("#announcement-id").value || null;
-    await saveAnnouncement({
-      id,
-      title: $("#announcement-title").value.trim(),
-      content: $("#announcement-content").value.trim(),
-      type: $("#announcement-type").value,
-      author: ADMIN_DISPLAY_NAME,
-    });
-    await refreshAnnouncements();
-    renderAdminAnnouncements();
-    renderAdminOverview();
-    closeModal("modal-announcement");
-    showToast(id ? "Đã cập nhật thông báo." : "Đã thêm thông báo mới.", "success");
+    try {
+      await saveAnnouncement({
+        id,
+        title: $("#announcement-title").value.trim(),
+        content: $("#announcement-content").value.trim(),
+        type: $("#announcement-type").value,
+        author: ADMIN_DISPLAY_NAME,
+      });
+      await refreshAnnouncements();
+      renderAdminAnnouncements();
+      renderAdminOverview();
+      closeModal("modal-announcement");
+      showToast(id ? "Đã cập nhật thông báo." : "Đã thêm thông báo mới.", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("Lưu thất bại, kiểm tra lại đăng nhập.", "error");
+    }
   });
 }
 
@@ -681,11 +678,16 @@ function renderAdminRecruitments() {
   $all("[data-delete-recruitment]", tbody).forEach((btn) =>
     btn.addEventListener("click", async () => {
       if (!confirm("Xóa tin tuyển dụng này?")) return;
-      await deleteRecruitment(btn.dataset.deleteRecruitment);
-      await refreshRecruitments();
-      renderAdminRecruitments();
-      renderAdminOverview();
-      showToast("Đã xóa tin tuyển dụng.", "success");
+      try {
+        await deleteRecruitment(btn.dataset.deleteRecruitment);
+        await refreshRecruitments();
+        renderAdminRecruitments();
+        renderAdminOverview();
+        showToast("Đã xóa tin tuyển dụng.", "success");
+      } catch (error) {
+        console.error(error);
+        showToast("Xóa thất bại, kiểm tra lại đăng nhập.", "error");
+      }
     })
   );
 }
@@ -716,19 +718,24 @@ function initRecruitmentForm() {
   $("#recruitment-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const id = $("#recruitment-id").value || null;
-    await saveRecruitment({
-      id,
-      position: $("#recruitment-position").value.trim(),
-      requirements: $("#recruitment-requirements").value.trim(),
-      benefits: $("#recruitment-benefits").value.trim(),
-      deadline: $("#recruitment-deadline").value,
-      status: $("#recruitment-status").value,
-    });
-    await refreshRecruitments();
-    renderAdminRecruitments();
-    renderAdminOverview();
-    closeModal("modal-recruitment");
-    showToast(id ? "Đã cập nhật tin tuyển dụng." : "Đã thêm tin tuyển dụng mới.", "success");
+    try {
+      await saveRecruitment({
+        id,
+        position: $("#recruitment-position").value.trim(),
+        requirements: $("#recruitment-requirements").value.trim(),
+        benefits: $("#recruitment-benefits").value.trim(),
+        deadline: $("#recruitment-deadline").value,
+        status: $("#recruitment-status").value,
+      });
+      await refreshRecruitments();
+      renderAdminRecruitments();
+      renderAdminOverview();
+      closeModal("modal-recruitment");
+      showToast(id ? "Đã cập nhật tin tuyển dụng." : "Đã thêm tin tuyển dụng mới.", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("Lưu thất bại, kiểm tra lại đăng nhập.", "error");
+    }
   });
 }
 
@@ -769,28 +776,43 @@ function renderAdminApplications() {
 
   $all("[data-approve]", tbody).forEach((btn) =>
     btn.addEventListener("click", async () => {
-      await approveApplication(btn.dataset.approve);
-      await refreshApplications();
-      renderAdminApplications();
-      showToast("Đã duyệt đơn đăng ký.", "success");
+      try {
+        await approveApplication(btn.dataset.approve);
+        await refreshApplications();
+        renderAdminApplications();
+        showToast("Đã duyệt đơn đăng ký.", "success");
+      } catch (error) {
+        console.error(error);
+        showToast("Thao tác thất bại, kiểm tra lại đăng nhập.", "error");
+      }
     })
   );
   $all("[data-reject]", tbody).forEach((btn) =>
     btn.addEventListener("click", async () => {
-      await rejectApplication(btn.dataset.reject);
-      await refreshApplications();
-      renderAdminApplications();
-      showToast("Đã từ chối đơn đăng ký.", "success");
+      try {
+        await rejectApplication(btn.dataset.reject);
+        await refreshApplications();
+        renderAdminApplications();
+        showToast("Đã từ chối đơn đăng ký.", "success");
+      } catch (error) {
+        console.error(error);
+        showToast("Thao tác thất bại, kiểm tra lại đăng nhập.", "error");
+      }
     })
   );
   $all("[data-delete-application]", tbody).forEach((btn) =>
     btn.addEventListener("click", async () => {
       if (!confirm("Xóa đơn đăng ký này?")) return;
-      await deleteApplication(btn.dataset.deleteApplication);
-      await refreshApplications();
-      renderAdminApplications();
-      renderAdminOverview();
-      showToast("Đã xóa đơn đăng ký.", "success");
+      try {
+        await deleteApplication(btn.dataset.deleteApplication);
+        await refreshApplications();
+        renderAdminApplications();
+        renderAdminOverview();
+        showToast("Đã xóa đơn đăng ký.", "success");
+      } catch (error) {
+        console.error(error);
+        showToast("Xóa thất bại, kiểm tra lại đăng nhập.", "error");
+      }
     })
   );
 }
@@ -885,6 +907,7 @@ async function init() {
   initMobileMenu();
   initNavHighlight();
   initModalGeneral();
+  initAdminAuthWatcher();
   initAdminLogin();
   initDashboardShell();
   initAnnouncementForm();
