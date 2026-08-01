@@ -33,10 +33,27 @@
       <a href="#trang-chu" class="nav-link" data-nav="trang-chu">Trang chủ</a>
       <a href="#thong-bao" class="nav-link" data-nav="thong-bao">Thông báo</a>
       <a href="#tuyen-dung" class="nav-link" data-nav="tuyen-dung">Tuyển dụng</a>
+      <a href="#chat" class="nav-link" data-nav="chat">Chat</a>
       <a href="#lien-he" class="nav-link" data-nav="lien-he">Liên hệ</a>
     </nav>
 
     <div class="header-actions">
+      <!-- Trạng thái CHƯA đăng nhập -->
+      <button class="btn btn-ghost btn-sm" id="google-login-btn">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.6 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4c-7.6 0-14.1 4.3-17.4 10.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.2-8l-6.5 5C9.8 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.3 5.3C41.3 35.6 44 30.2 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+        Đăng nhập Google
+      </button>
+
+      <!-- Trạng thái ĐÃ đăng nhập -->
+      <div class="user-chip" id="user-chip" style="display:none;">
+        <img id="user-chip-avatar" class="user-chip-avatar" src="" alt="" />
+        <span id="user-chip-name">Người dùng</span>
+        <div class="user-chip-menu" id="user-chip-menu">
+          <button type="button" id="user-chip-edit">Chỉnh sửa hồ sơ</button>
+          <button type="button" id="user-chip-logout">Đăng xuất</button>
+        </div>
+      </div>
+
       <button class="menu-toggle" id="menu-toggle" aria-label="Mở menu"><span></span></button>
     </div>
   </div>
@@ -46,6 +63,7 @@
   <a href="#trang-chu" class="nav-link" data-nav="trang-chu">Trang chủ</a>
   <a href="#thong-bao" class="nav-link" data-nav="thong-bao">Thông báo</a>
   <a href="#tuyen-dung" class="nav-link" data-nav="tuyen-dung">Tuyển dụng</a>
+  <a href="#chat" class="nav-link" data-nav="chat">Chat</a>
   <a href="#lien-he" class="nav-link" data-nav="lien-he">Liên hệ</a>
 </nav>
 
@@ -62,12 +80,12 @@
           <span class="accent">Nơi câu chuyện của bạn bắt đầu</span>
         </h1>
         <p class="hero-desc">
-          Theo dõi thông báo mới nhất, tham gia đội ngũ quản lý và cập nhật mọi thay đổi
-          của cộng đồng ngay tại một nơi duy nhất.
+          Theo dõi thông báo mới nhất, tham gia đội ngũ quản lý, trò chuyện cùng cộng đồng
+          và cập nhật mọi thay đổi ngay tại một nơi duy nhất.
         </p>
         <div class="hero-actions">
           <a href="#thong-bao" class="btn btn-primary" data-nav="thong-bao">Xem thông báo</a>
-          <a href="#tuyen-dung" class="btn btn-ghost" data-nav="tuyen-dung">Tuyển dụng</a>
+          <a href="#chat" class="btn btn-ghost" data-nav="chat">Vào Chat</a>
         </div>
         <div class="hero-meta">
           <div class="hero-meta-item">
@@ -96,9 +114,6 @@
   </section>
 
   <!-- ============================== THÔNG BÁO ============================== -->
-  <!-- Gộp chung: Thông báo / Cập nhật / Nội quy đều là "thông báo" chỉ khác Loại,
-       nên chỉ dùng 1 danh sách duy nhất kèm bộ lọc Loại bên dưới, không tách
-       thành nhiều mục trùng lặp trên trang chủ nữa. -->
   <section class="page-section" id="thong-bao">
     <div class="container">
       <div class="section-head reveal">
@@ -139,6 +154,49 @@
         </div>
       </div>
       <div class="card-grid" id="recruitment-list"></div>
+    </div>
+  </section>
+
+  <!-- ============================== CHAT TOÀN CỤC ============================== -->
+  <section class="page-section" id="chat">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <span class="section-eyebrow">Trò chuyện trực tiếp</span>
+          <h2 class="section-title">Chat cộng đồng</h2>
+          <p class="section-desc">Trò chuyện realtime với mọi thành viên. Đăng nhập bằng Google ở góc trên để bắt đầu nhắn tin.</p>
+        </div>
+      </div>
+
+      <div class="chat-box glass reveal">
+        <div class="chat-messages" id="chat-messages">
+          <div class="empty-state" id="chat-empty">
+            <div class="empty-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h3>Chưa có tin nhắn</h3>
+            <p>Hãy là người đầu tiên bắt đầu cuộc trò chuyện.</p>
+          </div>
+        </div>
+
+        <div class="chat-scroll-jump" id="chat-scroll-jump">Có tin nhắn mới ↓</div>
+
+        <form class="chat-composer" id="chat-composer">
+          <button type="button" class="chat-attach-btn" id="chat-attach-btn" title="Đính kèm ảnh">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          </button>
+          <input type="file" id="chat-image-input" accept="image/*" hidden />
+          <div class="chat-input-wrap">
+            <div class="chat-image-preview" id="chat-image-preview" style="display:none;">
+              <img id="chat-image-preview-img" src="" alt="" />
+              <button type="button" id="chat-image-preview-remove">✕</button>
+            </div>
+            <input type="text" id="chat-text-input" placeholder="Nhập tin nhắn..." autocomplete="off" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" id="chat-send-btn">Gửi</button>
+        </form>
+        <p class="chat-login-hint" id="chat-login-hint">Đăng nhập bằng Google để gửi tin nhắn.</p>
+      </div>
     </div>
   </section>
 
@@ -184,7 +242,7 @@
             </div>
             <div>
               <h4>Thời gian xử lý</h4>
-              <p>Thông tin liên hệ được lưu tạm trên trình duyệt của bạn ở giai đoạn hiện tại.</p>
+              <p>Mọi liên hệ được lưu lại và xử lý bởi đội ngũ quản trị.</p>
             </div>
           </div>
           <div class="contact-info-item">
@@ -209,7 +267,7 @@
     <div class="footer-top">
       <div class="footer-brand">
         <span class="brand-mark" id="brand-mark-footer"><span>RO</span></span>
-        <p id="footer-desc">Roleplay Official là cộng đồng roleplay chính thức, nơi cập nhật thông báo, tuyển dụng và quy định một cách minh bạch.</p>
+        <p id="footer-desc">Roleplay Official là cộng đồng roleplay chính thức, nơi cập nhật thông báo, tuyển dụng, chat và quy định một cách minh bạch.</p>
       </div>
       <div class="footer-col">
         <h4>Điều hướng</h4>
@@ -217,6 +275,7 @@
           <li><a href="#trang-chu" data-nav="trang-chu">Trang chủ</a></li>
           <li><a href="#thong-bao" data-nav="thong-bao">Thông báo</a></li>
           <li><a href="#tuyen-dung" data-nav="tuyen-dung">Tuyển dụng</a></li>
+          <li><a href="#chat" data-nav="chat">Chat</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -304,14 +363,14 @@
     <form class="modal-form" id="login-form">
       <div class="modal-error" id="login-error">Tên đăng nhập hoặc mật khẩu không đúng.</div>
       <div class="field">
-        <label for="login-username">Tên đăng nhập</label>
+        <label for="login-username">Email quản trị</label>
         <input type="text" id="login-username" autocomplete="username" required />
       </div>
       <div class="field">
         <label for="login-password">Mật khẩu</label>
         <input type="password" id="login-password" autocomplete="current-password" required />
       </div>
-      <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+      <button type="submit" class="btn btn-primary btn-block" id="login-submit-btn">Đăng nhập</button>
     </form>
   </div>
 </div>
@@ -387,6 +446,66 @@
       </div>
       <button type="submit" class="btn btn-primary btn-block">Lưu tin tuyển dụng</button>
     </form>
+  </div>
+</div>
+
+<!-- ============================== MODAL: CHỈNH SỬA HỒ SƠ ============================== -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h3>Chỉnh sửa hồ sơ</h3>
+        <p>ID định danh không thể thay đổi.</p>
+      </div>
+      <button class="modal-close" data-close="modal-edit-profile">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="modal-form" id="edit-profile-form">
+      <div class="edit-avatar-row">
+        <img id="edit-profile-avatar-preview" class="edit-avatar-preview" src="" alt="" />
+        <label class="btn btn-ghost btn-sm" for="edit-profile-avatar-input">Đổi ảnh đại diện</label>
+        <input type="file" id="edit-profile-avatar-input" accept="image/*" hidden />
+      </div>
+      <div class="field">
+        <label for="edit-profile-name">Tên hiển thị</label>
+        <input type="text" id="edit-profile-name" required maxlength="40" />
+      </div>
+      <p class="form-hint">ID định danh: <strong id="edit-profile-shortid">------</strong></p>
+      <button type="submit" class="btn btn-primary btn-block" id="edit-profile-submit">Lưu thay đổi</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================== MODAL: XEM HỒ SƠ NGƯỜI KHÁC ============================== -->
+<div class="modal-overlay" id="modal-view-profile">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><h3>Hồ sơ người dùng</h3></div>
+      <button class="modal-close" data-close="modal-view-profile">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="view-profile-body">
+      <img id="view-profile-avatar" class="view-profile-avatar" src="" alt="" />
+      <h3 id="view-profile-name">—</h3>
+      <div class="view-profile-rows">
+        <div><span>ID</span><strong id="view-profile-id">------</strong></div>
+        <div><span>Ngày tạo</span><strong id="view-profile-created">—</strong></div>
+        <div id="view-profile-email-row"><span>Email</span><strong id="view-profile-email">—</strong></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-block" data-close="modal-view-profile">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== MODAL: PHÓNG TO ẢNH ============================== -->
+<div class="modal-overlay" id="modal-image-view">
+  <div class="modal-box modal-image-box">
+    <button class="modal-close" data-close="modal-image-view">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <img id="image-view-full" src="" alt="Ảnh phóng to" />
   </div>
 </div>
 
