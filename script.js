@@ -1,39 +1,56 @@
 /* ==========================================================================
    Roleplay Official — script.js
-   Toàn bộ logic giao diện: điều hướng, hiệu ứng, quản trị, dữ liệu.
-   Lớp dữ liệu thực tế nằm trong firebase.js — file này chỉ gọi các hàm đó.
+   Toàn bộ logic giao diện: điều hướng, hiệu ứng, đăng nhập, chat, quản trị.
+   Lớp dữ liệu thực tế (Firestore/Auth/Storage) nằm trong firebase.js —
+   file này chỉ gọi các hàm đó và luôn lắng nghe REALTIME (onSnapshot),
+   không có bước "load 1 lần rồi thôi" nào nữa.
    ========================================================================== */
 
 import {
   loginAdmin,
   logoutAdmin,
-  watchAdminAuth,
-  loadAnnouncements,
+  loginWithGoogle,
+  watchAuthState,
+  checkIsAdmin,
+  getUserProfile,
+  updateUserProfile,
+  watchAnnouncements,
   saveAnnouncement,
   deleteAnnouncement,
-  loadRecruitments,
+  watchRecruitments,
   saveRecruitment,
   deleteRecruitment,
   saveApplication,
-  loadApplications,
+  watchApplications,
   approveApplication,
   rejectApplication,
   deleteApplication,
+  watchMessages,
+  sendMessage,
+  editMessage,
+  deleteMessage,
+  toggleReaction,
 } from "./firebase.js";
-
-const ADMIN_DISPLAY_NAME = "Quản trị viên";
 
 const DEFAULT_SETTINGS = {
   siteName: "Roleplay Official",
   version: "v1.0.0",
 };
 
+const REACTION_EMOJIS = ["👍", "❤️", "😂", "😢", "😮", "🎉"];
+
 const state = {
   announcements: [],
   recruitments: [],
   applications: [],
+  messages: [],
   settings: { ...DEFAULT_SETTINGS },
   isAdmin: false,
+  dashboardOpen: false,
+  currentUser: null, // Firebase Auth user object
+  profile: null, // { uid, shortId, displayName, avatarUrl, email, createdAt }
+  chatPendingImageFile: null,
+  chatFirstRenderDone: false,
 };
 
 /* --------------------------------------------------------------------------
@@ -69,6 +86,16 @@ function formatDeadline(dateStr) {
   const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function fallbackAvatar(name) {
+  const initial = (name || "?").trim().charAt(0).toUpperCase() || "?";
+  return (
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' fill='#133b8a'/><text x='50%' y='54%' font-family='Arial' font-size='34' fill='#f5f8fc' text-anchor='middle'>${initial}</text></svg>`
+    )
+  );
 }
 
 function showToast(message, type = "success") {
@@ -195,7 +222,7 @@ function initRevealAnimations() {
 }
 
 /* --------------------------------------------------------------------------
-   Hiệu ứng nền mạng lưới trong Trang chủ (signature animation)
+   Hiệu ứng nền mạng lưới trong Trang chủ
    -------------------------------------------------------------------------- */
 function initHeroNetwork() {
   const canvas = $("#hero-network");
@@ -305,11 +332,10 @@ function initModalGeneral() {
 }
 
 /* --------------------------------------------------------------------------
-   Áp dụng cấu hình cơ bản (tên website / phiên bản) lên giao diện
+   Cấu hình cơ bản (tên website / phiên bản)
    -------------------------------------------------------------------------- */
 function applySettingsToUI() {
   const s = state.settings;
-
   document.title = s.siteName;
 
   $all("#brand-name-header").forEach((el) => (el.textContent = s.siteName));
@@ -465,6 +491,153 @@ function updateHeroStats() {
 }
 
 /* --------------------------------------------------------------------------
+   Đăng nhập Google & hồ sơ người dùng (header)
+   -------------------------------------------------------------------------- */
+function initGoogleLogin() {
+  $("#google-login-btn").addEventListener("click", async () => {
+    try {
+      await loginWithGoogle();
+      showToast("Đăng nhập thành công.", "success");
+    } catch (error) {
+      console.error("[Đăng nhập Google] Lỗi:", error.code || error);
+      if (error.code !== "auth/popup-closed-by-user") {
+        showToast("Đăng nhập thất bại, vui lòng thử lại.", "error");
+      }
+    }
+  });
+}
+
+function initUserChip() {
+  const chip = $("#user-chip");
+  chip.addEventListener("click", (event) => {
+    if (event.target.closest("button")) return;
+    chip.classList.toggle("open");
+  });
+  document.addEventListener("click", (event) => {
+    if (!chip.contains(event.target)) chip.classList.remove("open");
+  });
+
+  $("#user-chip-edit").addEventListener("click", () => {
+    chip.classList.remove("open");
+    openEditProfileModal();
+  });
+
+  $("#user-chip-logout").addEventListener("click", async () => {
+    chip.classList.remove("open");
+    await logoutAdmin();
+    showToast("Đã đăng xuất.", "success");
+  });
+}
+
+// Cập nhật toàn bộ giao diện phụ thuộc trạng thái đăng nhập: chip header,
+// khả năng gửi chat, và cờ isAdmin dùng cho bảng điều khiển.
+function applyAuthStateToUI({ user, profile, isAdmin }) {
+  state.currentUser = user;
+  state.profile = profile;
+  state.isAdmin = isAdmin;
+
+  const loginBtn = $("#google-login-btn");
+  const chip = $("#user-chip");
+
+  if (user && profile) {
+    loginBtn.style.display = "none";
+    chip.style.display = "flex";
+    $("#user-chip-avatar").src = profile.avatarUrl || fallbackAvatar(profile.displayName);
+    $("#user-chip-name").textContent = profile.displayName || "Người dùng";
+  } else {
+    loginBtn.style.display = "inline-flex";
+    chip.style.display = "none";
+    chip.classList.remove("open");
+  }
+
+  updateChatComposerAvailability();
+
+  if (state.dashboardOpen && !isAdmin) {
+    // Người dùng đã đăng xuất hoặc mất quyền trong lúc đang mở dashboard.
+    closeDashboard();
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Chỉnh sửa hồ sơ
+   -------------------------------------------------------------------------- */
+function openEditProfileModal() {
+  if (!state.profile) {
+    showToast("Bạn cần đăng nhập trước.", "error");
+    return;
+  }
+  const form = $("#edit-profile-form");
+  form.reset();
+  $("#edit-profile-name").value = state.profile.displayName || "";
+  $("#edit-profile-shortid").textContent = state.profile.shortId || "------";
+  $("#edit-profile-avatar-preview").src = state.profile.avatarUrl || fallbackAvatar(state.profile.displayName);
+  openModal("modal-edit-profile");
+}
+
+function initEditProfileForm() {
+  let pendingAvatarFile = null;
+
+  $("#edit-profile-avatar-input").addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    pendingAvatarFile = file;
+    $("#edit-profile-avatar-preview").src = URL.createObjectURL(file);
+  });
+
+  $("#edit-profile-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!state.currentUser) return;
+    const submitBtn = $("#edit-profile-submit");
+    submitBtn.disabled = true;
+    try {
+      await updateUserProfile(state.currentUser.uid, {
+        displayName: $("#edit-profile-name").value,
+        avatarFile: pendingAvatarFile,
+      });
+      const fresh = await getUserProfile(state.currentUser.uid);
+      state.profile = fresh;
+      $("#user-chip-avatar").src = fresh.avatarUrl || fallbackAvatar(fresh.displayName);
+      $("#user-chip-name").textContent = fresh.displayName || "Người dùng";
+      pendingAvatarFile = null;
+      closeModal("modal-edit-profile");
+      showToast("Đã cập nhật hồ sơ.", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("Cập nhật thất bại, vui lòng thử lại.", "error");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Xem hồ sơ người khác
+   -------------------------------------------------------------------------- */
+async function openViewProfileModal(uid) {
+  if (!uid) return;
+  try {
+    const profile = await getUserProfile(uid);
+    if (!profile) {
+      showToast("Không tìm thấy hồ sơ này.", "error");
+      return;
+    }
+    $("#view-profile-avatar").src = profile.avatarUrl || fallbackAvatar(profile.displayName);
+    $("#view-profile-name").textContent = profile.displayName || "Người dùng";
+    $("#view-profile-id").textContent = profile.shortId || "------";
+    $("#view-profile-created").textContent = formatTime(profile.createdAt);
+
+    const isOwnProfile = state.currentUser && state.currentUser.uid === uid;
+    $("#view-profile-email-row").style.display = isOwnProfile ? "flex" : "none";
+    if (isOwnProfile) $("#view-profile-email").textContent = profile.email || "—";
+
+    openModal("modal-view-profile");
+  } catch (error) {
+    console.error(error);
+    showToast("Không thể tải hồ sơ.", "error");
+  }
+}
+
+/* --------------------------------------------------------------------------
    Đăng nhập quản trị & Bảng điều khiển
    -------------------------------------------------------------------------- */
 function initAdminLogin() {
@@ -476,39 +649,37 @@ function initAdminLogin() {
 
   $("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    // Trường #login-username giờ dùng để nhập EMAIL quản trị đã tạo trên
-    // Firebase Console > Authentication (không phải username tự đặt nữa).
     const email = $("#login-username").value.trim();
     const password = $("#login-password").value;
-    const submitBtn = $("#login-form button[type=submit]");
+    const submitBtn = $("#login-submit-btn");
 
     submitBtn.disabled = true;
     $("#login-error").classList.remove("show");
 
     try {
-      await loginAdmin(email, password);
-      // state.isAdmin sẽ được cập nhật bởi watchAdminAuth() bên dưới,
-      // nhưng set luôn ở đây để mở dashboard ngay không phải chờ callback.
+      const user = await loginAdmin(email, password);
+      const isAdmin = await checkIsAdmin(user.uid);
+
+      if (!isAdmin) {
+        $("#login-error").textContent = "Tài khoản này không có quyền quản trị.";
+        $("#login-error").classList.add("show");
+        await logoutAdmin();
+        return;
+      }
+
+      // Không chờ watchAuthState (tránh race condition khiến dashboard
+      // không mở được) — cập nhật cờ và mở dashboard ngay tại đây.
       state.isAdmin = true;
       closeModal("modal-login");
-      showToast("Đăng nhập thành công.", "success");
+      showToast("Đăng nhập quản trị thành công.", "success");
       openDashboard();
     } catch (error) {
       console.error("[Đăng nhập quản trị] Lỗi:", error.code || error);
-      state.isAdmin = false;
+      $("#login-error").textContent = "Email hoặc mật khẩu không đúng.";
       $("#login-error").classList.add("show");
     } finally {
       submitBtn.disabled = false;
     }
-  });
-}
-
-// Theo dõi trạng thái đăng nhập Firebase Auth trong suốt phiên làm việc.
-// Nhờ vậy nếu người dùng F5 lại trang mà phiên đăng nhập Firebase còn hiệu
-// lực, state.isAdmin vẫn đúng (không cần đăng nhập lại).
-function initAdminAuthWatcher() {
-  watchAdminAuth((user) => {
-    state.isAdmin = Boolean(user);
   });
 }
 
@@ -517,6 +688,7 @@ function openDashboard() {
     showToast("Bạn cần đăng nhập quản trị trước.", "error");
     return;
   }
+  state.dashboardOpen = true;
   $("#admin-dashboard").classList.add("open");
   document.body.classList.add("no-scroll");
   renderAdminOverview();
@@ -526,6 +698,7 @@ function openDashboard() {
 }
 
 function closeDashboard() {
+  state.dashboardOpen = false;
   $("#admin-dashboard").classList.remove("open");
   document.body.classList.remove("no-scroll");
 }
@@ -534,7 +707,6 @@ function initDashboardShell() {
   $("#dash-close-btn").addEventListener("click", closeDashboard);
   $("#dash-logout-btn").addEventListener("click", async () => {
     await logoutAdmin();
-    state.isAdmin = false;
     closeDashboard();
     showToast("Đã đăng xuất khỏi quản trị.", "success");
   });
@@ -592,9 +764,6 @@ function renderAdminAnnouncements() {
       if (!confirm("Xóa thông báo này?")) return;
       try {
         await deleteAnnouncement(btn.dataset.deleteAnnouncement);
-        await refreshAnnouncements();
-        renderAdminAnnouncements();
-        renderAdminOverview();
         showToast("Đã xóa thông báo.", "success");
       } catch (error) {
         console.error(error);
@@ -634,11 +803,8 @@ function initAnnouncementForm() {
         title: $("#announcement-title").value.trim(),
         content: $("#announcement-content").value.trim(),
         type: $("#announcement-type").value,
-        author: ADMIN_DISPLAY_NAME,
+        author: state.profile?.displayName || "Quản trị viên",
       });
-      await refreshAnnouncements();
-      renderAdminAnnouncements();
-      renderAdminOverview();
       closeModal("modal-announcement");
       showToast(id ? "Đã cập nhật thông báo." : "Đã thêm thông báo mới.", "success");
     } catch (error) {
@@ -680,9 +846,6 @@ function renderAdminRecruitments() {
       if (!confirm("Xóa tin tuyển dụng này?")) return;
       try {
         await deleteRecruitment(btn.dataset.deleteRecruitment);
-        await refreshRecruitments();
-        renderAdminRecruitments();
-        renderAdminOverview();
         showToast("Đã xóa tin tuyển dụng.", "success");
       } catch (error) {
         console.error(error);
@@ -727,9 +890,6 @@ function initRecruitmentForm() {
         deadline: $("#recruitment-deadline").value,
         status: $("#recruitment-status").value,
       });
-      await refreshRecruitments();
-      renderAdminRecruitments();
-      renderAdminOverview();
       closeModal("modal-recruitment");
       showToast(id ? "Đã cập nhật tin tuyển dụng." : "Đã thêm tin tuyển dụng mới.", "success");
     } catch (error) {
@@ -778,8 +938,6 @@ function renderAdminApplications() {
     btn.addEventListener("click", async () => {
       try {
         await approveApplication(btn.dataset.approve);
-        await refreshApplications();
-        renderAdminApplications();
         showToast("Đã duyệt đơn đăng ký.", "success");
       } catch (error) {
         console.error(error);
@@ -791,8 +949,6 @@ function renderAdminApplications() {
     btn.addEventListener("click", async () => {
       try {
         await rejectApplication(btn.dataset.reject);
-        await refreshApplications();
-        renderAdminApplications();
         showToast("Đã từ chối đơn đăng ký.", "success");
       } catch (error) {
         console.error(error);
@@ -805,9 +961,6 @@ function renderAdminApplications() {
       if (!confirm("Xóa đơn đăng ký này?")) return;
       try {
         await deleteApplication(btn.dataset.deleteApplication);
-        await refreshApplications();
-        renderAdminApplications();
-        renderAdminOverview();
         showToast("Đã xóa đơn đăng ký.", "success");
       } catch (error) {
         console.error(error);
@@ -823,20 +976,20 @@ function renderAdminApplications() {
 function initApplyForm() {
   $("#apply-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    await saveApplication({
-      robloxName: $("#apply-roblox").value.trim(),
-      discordName: $("#apply-discord").value.trim(),
-      rank: $("#apply-rank").value.trim(),
-      age: Number($("#apply-age").value),
-      reason: $("#apply-reason").value.trim(),
-    });
-    await refreshApplications();
-    if (state.isAdmin) {
-      renderAdminApplications();
-      renderAdminOverview();
+    try {
+      await saveApplication({
+        robloxName: $("#apply-roblox").value.trim(),
+        discordName: $("#apply-discord").value.trim(),
+        rank: $("#apply-rank").value.trim(),
+        age: Number($("#apply-age").value),
+        reason: $("#apply-reason").value.trim(),
+      });
+      $("#apply-form").style.display = "none";
+      $("#apply-success").style.display = "flex";
+    } catch (error) {
+      console.error(error);
+      showToast("Gửi đơn thất bại, vui lòng thử lại.", "error");
     }
-    $("#apply-form").style.display = "none";
-    $("#apply-success").style.display = "flex";
   });
 }
 
@@ -848,37 +1001,289 @@ function initContactForm() {
   });
 }
 
-/* --------------------------------------------------------------------------
-   Tải & làm mới dữ liệu
-   -------------------------------------------------------------------------- */
-async function refreshAnnouncements() {
-  state.announcements = await loadAnnouncements();
-  renderAnnouncements();
+/* ==========================================================================
+   CHAT TOÀN CỤC
+   ========================================================================== */
+function isChatNearBottom(container) {
+  return container.scrollHeight - container.scrollTop - container.clientHeight < 80;
 }
 
-async function refreshRecruitments() {
-  state.recruitments = await loadRecruitments();
-  renderRecruitments();
+function scrollChatToBottom(smooth = false) {
+  const container = $("#chat-messages");
+  container.scrollTo({ top: container.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+  $("#chat-scroll-jump").classList.remove("show");
 }
 
-async function refreshApplications() {
-  state.applications = await loadApplications();
+function reactionChipsHtml(message) {
+  const uid = state.currentUser?.uid;
+  const reactions = message.reactions || {};
+  return Object.entries(reactions)
+    .filter(([, uids]) => uids && uids.length)
+    .map(([emoji, uids]) => {
+      const mine = uid && uids.includes(uid) ? "mine" : "";
+      return `<button type="button" class="chat-reaction-chip ${mine}" data-react="${message.id}" data-emoji="${emoji}">${emoji} ${uids.length}</button>`;
+    })
+    .join("");
 }
 
-async function loadInitialData() {
-  const [announcements, recruitments, applications] = await Promise.all([
-    loadAnnouncements(),
-    loadRecruitments(),
-    loadApplications(),
-  ]);
-  state.announcements = announcements;
-  state.recruitments = recruitments;
-  state.applications = applications;
-  state.settings = { ...DEFAULT_SETTINGS };
+function chatMessageHtml(message) {
+  const isMine = state.currentUser && state.currentUser.uid === message.uid;
+  const avatar = message.avatarUrl || fallbackAvatar(message.displayName);
+  const imageBlock = message.imageUrl
+    ? `<div class="chat-msg-image" data-view-image="${message.imageUrl}"><img src="${message.imageUrl}" alt="Ảnh đính kèm" loading="lazy" /></div>`
+    : "";
+  const textBlock = message.text ? `<p class="chat-msg-text" data-msg-text="${message.id}">${escapeHtml(message.text)}</p>` : "";
+  const editedBlock = message.editedAt ? `<span class="chat-msg-edited">(đã chỉnh sửa)</span>` : "";
 
-  applySettingsToUI();
-  renderAnnouncements();
-  renderRecruitments();
+  const reactionButtons = REACTION_EMOJIS.map(
+    (emoji) => `<button type="button" data-pick-emoji="${message.id}" data-emoji="${emoji}">${emoji}</button>`
+  ).join("");
+
+  const ownerActions = isMine
+    ? `
+      <button type="button" data-edit-msg="${message.id}">Sửa</button>
+      <button type="button" data-delete-msg="${message.id}">Xóa</button>
+    `
+    : "";
+
+  return `
+    <div class="chat-msg" data-message-id="${message.id}">
+      <img class="chat-msg-avatar" src="${avatar}" alt="" data-view-profile="${message.uid}" />
+      <div class="chat-msg-body">
+        <div class="chat-msg-head">
+          <span class="chat-msg-name" data-view-profile="${message.uid}">${escapeHtml(message.displayName || "Người dùng")}</span>
+          <span class="chat-msg-time">${formatTime(message.timestamp)}</span>
+          ${editedBlock}
+        </div>
+        ${textBlock}
+        ${imageBlock}
+        <div class="chat-reactions">${reactionChipsHtml(message)}</div>
+        <div class="chat-msg-actions">
+          <div class="chat-reaction-picker">
+            <button type="button" class="chat-reaction-add" data-toggle-picker="${message.id}">😊+</button>
+            <div class="chat-reaction-options" id="picker-${message.id}">${reactionButtons}</div>
+          </div>
+          ${ownerActions}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderChatMessages() {
+  const container = $("#chat-messages");
+  const wasAtBottom = !state.chatFirstRenderDone || isChatNearBottom(container);
+
+  container.innerHTML = state.messages.length
+    ? state.messages.map(chatMessageHtml).join("")
+    : `
+      <div class="empty-state" id="chat-empty">
+        <div class="empty-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Chưa có tin nhắn</h3>
+        <p>Hãy là người đầu tiên bắt đầu cuộc trò chuyện.</p>
+      </div>
+    `;
+
+  attachChatMessageHandlers(container);
+
+  if (wasAtBottom) {
+    scrollChatToBottom();
+  } else {
+    $("#chat-scroll-jump").classList.add("show");
+  }
+  state.chatFirstRenderDone = true;
+}
+
+function attachChatMessageHandlers(container) {
+  $all("[data-view-profile]", container).forEach((el) =>
+    el.addEventListener("click", () => openViewProfileModal(el.dataset.viewProfile))
+  );
+
+  $all("[data-view-image]", container).forEach((el) =>
+    el.addEventListener("click", () => {
+      $("#image-view-full").src = el.dataset.viewImage;
+      openModal("modal-image-view");
+    })
+  );
+
+  $all("[data-toggle-picker]", container).forEach((btn) =>
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const picker = $(`#picker-${btn.dataset.togglePicker}`);
+      const wasOpen = picker.classList.contains("open");
+      $all(".chat-reaction-options.open", container).forEach((el) => el.classList.remove("open"));
+      if (!wasOpen) picker.classList.add("open");
+    })
+  );
+
+  $all("[data-pick-emoji]", container).forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      if (!state.currentUser) {
+        showToast("Đăng nhập Google để thả cảm xúc.", "error");
+        return;
+      }
+      try {
+        await toggleReaction(btn.dataset.pickEmoji, btn.dataset.emoji, state.currentUser.uid);
+      } catch (error) {
+        console.error(error);
+        showToast("Không thể thả cảm xúc lúc này.", "error");
+      }
+    })
+  );
+
+  $all("[data-react]", container).forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      if (!state.currentUser) {
+        showToast("Đăng nhập Google để thả cảm xúc.", "error");
+        return;
+      }
+      try {
+        await toggleReaction(btn.dataset.react, btn.dataset.emoji, state.currentUser.uid);
+      } catch (error) {
+        console.error(error);
+        showToast("Không thể thả cảm xúc lúc này.", "error");
+      }
+    })
+  );
+
+  $all("[data-delete-msg]", container).forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      if (!confirm("Xóa tin nhắn này?")) return;
+      try {
+        await deleteMessage(btn.dataset.deleteMsg);
+      } catch (error) {
+        console.error(error);
+        showToast("Xóa thất bại.", "error");
+      }
+    })
+  );
+
+  $all("[data-edit-msg]", container).forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.editMsg;
+      const textEl = $(`[data-msg-text="${id}"]`, container);
+      if (!textEl) return;
+      const currentText = textEl.textContent;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "chat-msg-edit-input";
+      input.value = currentText;
+      textEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      async function commit() {
+        const newText = input.value.trim();
+        if (newText && newText !== currentText) {
+          try {
+            await editMessage(id, newText);
+          } catch (error) {
+            console.error(error);
+            showToast("Sửa tin nhắn thất bại.", "error");
+          }
+        }
+      }
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          input.blur();
+        }
+        if (event.key === "Escape") {
+          renderChatMessages();
+        }
+      });
+      input.addEventListener("blur", commit);
+    })
+  );
+
+  // Đóng picker reaction khi bấm ra ngoài.
+  document.addEventListener(
+    "click",
+    () => $all(".chat-reaction-options.open", container).forEach((el) => el.classList.remove("open")),
+    { once: true }
+  );
+}
+
+function updateChatComposerAvailability() {
+  const composer = $("#chat-composer");
+  const hint = $("#chat-login-hint");
+  const loggedIn = Boolean(state.currentUser);
+  composer.classList.toggle("disabled", !loggedIn);
+  hint.style.display = loggedIn ? "none" : "block";
+}
+
+function initChatComposer() {
+  const attachBtn = $("#chat-attach-btn");
+  const fileInput = $("#chat-image-input");
+  const preview = $("#chat-image-preview");
+  const previewImg = $("#chat-image-preview-img");
+  const textInput = $("#chat-text-input");
+  const composer = $("#chat-composer");
+
+  attachBtn.addEventListener("click", () => {
+    if (!state.currentUser) {
+      showToast("Đăng nhập Google để gửi ảnh.", "error");
+      return;
+    }
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    state.chatPendingImageFile = file;
+    previewImg.src = URL.createObjectURL(file);
+    preview.style.display = "flex";
+  });
+
+  $("#chat-image-preview-remove").addEventListener("click", () => {
+    state.chatPendingImageFile = null;
+    fileInput.value = "";
+    preview.style.display = "none";
+  });
+
+  composer.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!state.currentUser || !state.profile) {
+      showToast("Đăng nhập Google để gửi tin nhắn.", "error");
+      return;
+    }
+    const text = textInput.value.trim();
+    const imageFile = state.chatPendingImageFile;
+    if (!text && !imageFile) return; // Text rỗng và không có ảnh => không gửi.
+
+    const sendBtn = $("#chat-send-btn");
+    sendBtn.disabled = true;
+    try {
+      await sendMessage({
+        uid: state.currentUser.uid,
+        displayName: state.profile.displayName,
+        avatarUrl: state.profile.avatarUrl,
+        text,
+        imageFile,
+      });
+      textInput.value = "";
+      state.chatPendingImageFile = null;
+      fileInput.value = "";
+      preview.style.display = "none";
+    } catch (error) {
+      console.error(error);
+      showToast("Gửi tin nhắn thất bại.", "error");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+
+  $("#chat-scroll-jump").addEventListener("click", () => scrollChatToBottom(true));
+
+  $("#chat-messages").addEventListener("scroll", () => {
+    if (isChatNearBottom($("#chat-messages"))) {
+      $("#chat-scroll-jump").classList.remove("show");
+    }
+  });
 }
 
 /* --------------------------------------------------------------------------
@@ -898,26 +1303,70 @@ function initFooterYear() {
 }
 
 /* --------------------------------------------------------------------------
+   Đăng ký lắng nghe dữ liệu Firestore realtime
+   -------------------------------------------------------------------------- */
+function subscribeRealtimeData() {
+  watchAnnouncements((items) => {
+    state.announcements = items;
+    renderAnnouncements();
+    if (state.dashboardOpen) {
+      renderAdminAnnouncements();
+      renderAdminOverview();
+    }
+  });
+
+  watchRecruitments((items) => {
+    state.recruitments = items;
+    renderRecruitments();
+    if (state.dashboardOpen) {
+      renderAdminRecruitments();
+      renderAdminOverview();
+    }
+  });
+
+  watchApplications((items) => {
+    state.applications = items;
+    if (state.dashboardOpen) {
+      renderAdminApplications();
+      renderAdminOverview();
+    }
+  });
+
+  watchMessages((items) => {
+    state.messages = items;
+    renderChatMessages();
+  });
+
+  watchAuthState(applyAuthStateToUI);
+}
+
+/* --------------------------------------------------------------------------
    Khởi chạy ứng dụng
    -------------------------------------------------------------------------- */
-async function init() {
+function init() {
   initLoadingScreen();
   detectDevice();
   initHeaderScroll();
   initMobileMenu();
   initNavHighlight();
   initModalGeneral();
-  initAdminAuthWatcher();
+  initGoogleLogin();
+  initUserChip();
+  initEditProfileForm();
   initAdminLogin();
   initDashboardShell();
   initAnnouncementForm();
   initRecruitmentForm();
   initApplyForm();
   initContactForm();
+  initChatComposer();
   initAnnouncementToolbar();
   initFooterYear();
 
-  await loadInitialData();
+  state.settings = { ...DEFAULT_SETTINGS };
+  applySettingsToUI();
+
+  subscribeRealtimeData();
 
   initRevealAnimations();
   initHeroNetwork();
